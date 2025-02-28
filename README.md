@@ -1,3 +1,4 @@
 # PayCheck System
 
-fucking awesome
+fucking awesome 
+shit why is lagging 
