@@ -1,1 +1,3 @@
-# PayCheck
+# PayCheck System
+
+fucking awesome
