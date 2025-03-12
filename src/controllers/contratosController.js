@@ -3,16 +3,16 @@ const db = require("../config/db");
 //adicionar contrato
 exports.criarContrato = (req, res) => {
     const { idEmp, idStatus, idComp, dataVen, dataRen, valor} = req.body;
-    const sql = `INSERT INTO contratos (idEmp, idStatus, idComp, dataVen, dataRen, valor) VALUES ('${idEmp}', '${idStatus}', '${idComp}', '${dataVen}', '${dataRen}', '${valor}')`;
+    const sql = `INSERT INTO contratos (idEmp, idStatus, idComp, dataVen, dataRen, valor) VALUES (?, ?, ?, ?, ?, ?)`;
 
-    db.query(sql [idEmp, idStatus, idComp, dataVen, dataRen, valor], (err, result) => {
+    db.query(sql, [idEmp, idStatus, idComp, dataVen, dataRen, valor], (err, result) => {
         if (err) {
+            console.error("Erro ao criar contrato:", err);
             return res.status(500).json({ error: "Erro ao criar contrato." });
         }
         res.status(201).json({ message: "Contrato criado com sucesso.", contratoId: result.insertId });
     });
-
-};
+}   
 
 
 //listar todos os contratos
@@ -21,7 +21,7 @@ exports.listarContratos = (req, res) => {
     if (err) {
         return res.status(500).json({ error: "Erro ao listar contratos." });
     }
-    res.json(results);
+    res.json(result);
     });
 
 };
@@ -45,7 +45,8 @@ exports.buscarContrato = (req, res) => {
 exports. atualizarContrato = (req, res) => {
     const { id } = req.params;
     const { idEmp, idStatus, idComp, dataVen, dataRen, valor } = req.body;
-    const sql = `UPDATE contratos SET idEmp = ${idEmp}, idStatus = ${idStatus}, idComp = ${idComp}, dataVen = ${dataVen}, dataRen = ${dataRen}, valor = ${valor} WHERE idContrato = ?`;
+    const sql = "UPDATE contratos SET idEmp = ?, idStatus = ?, idComp = ?, dataVen = ?, dataRen = ?, valor = ? WHERE idContrato = ?";
+
 
     db.query(sql, [idEmp, idStatus, idComp, dataVen, dataRen, valor, id], (err, result) => {
         if (err) {
