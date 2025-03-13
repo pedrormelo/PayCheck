@@ -41,6 +41,58 @@ exports.buscarContrato = (req, res) => {
 
 };
 
+//filtrar contrato
+exports.filtrarContrato = (req, res) => {
+    console.log("🔍 Rota /contratos/filtrar foi acessada com query:", req.query);
+    console.log("🔍 Parâmetros recebidos:", req.query);
+
+    const { search, idStatus, mesPag, anoPag } = req.query;
+    if (!search && !idStatus && !mesPag && !anoPag) {
+        return res.status(400).json({ error: "Nenhum filtro fornecido." });
+    }
+
+    let sql = `
+        SELECT contratos.*, empresas.nomeEmp, competencia.mesPag, competencia.anoPag
+        FROM contratos
+        INNER JOIN empresas ON contratos.idEmp = empresas.idEmp
+        INNER JOIN competencia ON contratos.idComp = competencia.idComp
+        WHERE 1 = 1
+    `;
+
+    const params = [];
+
+    //filtrar por nome da empresa ou id do contrato
+    if (search) {
+        if (!isNaN(search)) {
+            sql += ` AND contratos.idContrato = ?`;
+            params.push(search);
+        } else {
+            sql += ` AND empresas.nomeEmp LIKE ?`;
+            params.push(`%${search}%`);
+        }
+    }
+
+    //filtrar por status do contrato
+    if (idStatus) {
+        sql += ` AND contratos.idStatus = ?`;
+        params.push(idStatus);
+    }
+
+    //filtrar por mês da competência
+    if (mesPag && anoPag) {
+        sql += ` AND competencia.mesPag = ? AND competencia.anoPag = ?`;
+        params.push(mesPag, anoPag);
+    }
+
+    db.query(sql, params, (err, results) => {
+        if (err) {
+            console.error("❌ Erro ao filtrar contratos:", err);
+            return res.status(500).json({ error: "Erro ao filtrar contratos." });
+        }
+        res.json(results);
+    });
+};
+
 //atualizar contrato
 exports. atualizarContrato = (req, res) => {
     const { id } = req.params;
