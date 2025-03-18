@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Contratos</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lista de Contratos</h1>
+    
+    <label for="search">Buscar:</label>
+    <input type="text" id="search" placeholder="Digite nome da empresa ou ID do contrato" oninput="buscarContratos()">
+
+    <label for="status">Filtrar por Status:</label>
+    <select id="status" onchange="buscarContratos()">
+        <option value="">Todos</option>
+        <option value="1">Em Andamento</option>
+        <option value="2">Pago</option>
+        <option value="3">Liquidação</option>
+    </select>
+
+    <label for="competencia">Filtrar por Competência:</label>
+    <input type="month" id="competencia" onchange="buscarContratos()">
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Empresa</th>
+                <th>Status</th>
+                <th>Data de Vencimento</th>
+                <th>Data de Renovação</th>
+                <th>Valor</th>
+            </tr>
+        </thead>
+        <tbody id="contratosTable">
+            <!-- Os contratos serão inseridos aqui via JS -->
+        </tbody>
+    </table>
+
+    <script>
+        async function buscarContratos() {
+            const search = document.getElementById("search").value;
+            const status = document.getElementById("status").value;
+            const competencia = document.getElementById("competencia").value;
+
+            let url = "http://localhost:3000/contratos/filtrar?";
+            
+            if (search) {
+                url += `search=${search}&`;
+            }
+            if (status) {
+                url += `idStatus=${status}&`;
+            }
+            if (competencia) {
+                const [anoComp, mesComp] = competencia.split("-");
+                url += `mesComp=${mesComp}&anoComp=${anoComp}&`;
+            }
+
+            try {
+                const response = await fetch(url);
+                const contratos = await response.json();
+                
+                const tabela = document.getElementById("contratosTable");
+                tabela.innerHTML = "";
+
+                contratos.forEach(contrato => {
+                    const row = `
+                        <tr>
+                            <td>${contrato.idContrato}</td>
+                            <td>${contrato.nomeEmp}</td>
+                            <td>${contrato.idStatus}</td>
+                            <td>${contrato.dataVen}</td>
+                            <td>${contrato.dataRen}</td>
+                            <td>R$ ${contrato.valor.toFixed(2)}</td>
+                        </tr>
+                    `;
+                    tabela.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Erro ao buscar contratos:", error);
+            }
+        }
+
+        buscarContratos();
+    </script>
+</body>
+</html>
+ 

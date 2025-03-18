@@ -120,3 +120,43 @@ exports.deletarContrato = (req, res) => {
     });
 
 };
+
+//atualizar status do contrato
+exports.atualizarStatus = (req, res) => {
+    const { id } = req.params;
+    const { idStatus } = req.body;
+    const sql = "UPDATE contratos SET idStatus = ? WHERE idContrato = ?";
+
+    db.query(sql, [idStatus, id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: "Erro ao atualizar status do contrato." });
+        }
+        res.json({ message: "Status do contrato atualizado com sucesso!" });
+    });
+};
+
+//listar contratos atrasados
+exports.listarContratosAtrasados = (req, res) => {
+    console.log("🔍 Rota /atrasados foi acessada com query:", req.query);
+    console.log("🔍 Parâmetros recebidos:", req.query);
+
+    const sql = `
+        SELECT contratos.*, empresas.nomeEmp, competencia.mesPag, competencia.anoPag,
+        TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(competencia.anoPag, '-', competencia.mesPag, '-01'), '%Y-%m-%d'), CURDATE()) AS mesesAtraso
+        FROM contratos
+        INNER JOIN empresas ON contratos.idEmp = empresas.idEmp
+        INNER JOIN competencia ON contratos.idComp = competencia.idComp
+        WHERE TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(competencia.anoPag, '-', competencia.mesPag, '-01'), '%Y-%m-%d'), CURDATE()) > 0
+    `;
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error("❌ Erro ao listar contratos atrasados:", err);
+            return res.status(500).json({ error: "Erro ao listar contratos atrasados." });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ error: "Contrato não encontrado." });
+        }
+        res.json(results);
+    });
+};
