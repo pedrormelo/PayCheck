@@ -1,9 +1,23 @@
 const db = require("../config/db");
+const moment = require("moment");
+const path = require("path");
+const fs = require("fs");
 
 //adicionar contrato
 exports.criarContrato = (req, res) => {
-    const { idEmp, idStatus, idComp, dataVen, dataRen, valor} = req.body;
-    const sql = `INSERT INTO contratos (idEmp, idStatus, idComp, dataVen, dataRen, valor) VALUES (?, ?, ?, ?, ?, ?)`;
+    let { idEmp, idStatus, idComp, dataVen, valor } = req.body;
+
+    if (!idEmp || !idStatus || !idComp || !dataVen || !valor) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    //calc dataRen
+    const dataRen = moment(dataVen).subtract(180, "days").format("YYYY-MM-DD");
+
+    const sql = `
+    INSERT INTO contratos (idEmp, idStatus, idComp, dataVen, dataRen, valor) 
+    VALUES (?, ?, ?, ?, ?, ?)
+    `;
 
     db.query(sql, [idEmp, idStatus, idComp, dataVen, dataRen, valor], (err, result) => {
         if (err) {
@@ -160,3 +174,29 @@ exports.listarContratosAtrasados = (req, res) => {
         res.json(results);
     });
 };
+
+//Upload contratos em pdf
+exports.uploadContratoPDF = (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "Nenhum arquivo enviado ou formato inválido." });    
+    }
+
+    const filePath = path.join(__dirname, "../../uploads", req.file.filename);
+
+    res.status(201).json({
+        message: "PDF do contrato enviado com sucesso.",
+        filePath: filePath
+    });
+};
+
+//Download contratos em pdf
+exports.downloadContratoPDF = (req, res) => {
+    const filePath = path.join(__dirname, "../../uploads/contratos", `contrato_${req.params.idContrato}.pdf`);
+
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "Arquivo não encontrado."});
+
+    }
+
+    res.download(filePath);
+}

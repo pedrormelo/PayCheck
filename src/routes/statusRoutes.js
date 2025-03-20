@@ -1,11 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const contratosController = require("../controllers/contratosController");
+const contratosController = require("../controllers/statusController");
 
-router.post("/", contratosController.criarContrato);
-router.get("/", contratosController.listarContratos);
-router.get("/:id", contratosController.buscarContrato);
-router.put("/:id", contratosController.atualizarContrato);
-router.delete("/:id", contratosController.deletarContrato);
+router.get("/", contratosController.listarSituacao);
 
 module.exports = router;

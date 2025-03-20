@@ -4,8 +4,9 @@ const express = require("express");
 const cors = require("cors");
 const contratosRoutes = require("./routes/contratosRoutes");
 const empresasRoutes = require("./routes/empresasRoutes");
-// const competenciaRoutes = require("./routes/competenciaRoutes");
-// const statusRoutes = require("./routes/statusRoutes");
+const pagamentosRoutes = require("./routes/pagamentosRoutes");
+const competenciaRoutes = require("./routes/competenciaRoutes");
+const statusRoutes = require("./routes/statusRoutes");
 
 const app = express();
 app.use(cors());
@@ -14,8 +15,9 @@ app.use(express.json());
 //rotas
 app.use("/contratos", contratosRoutes);
 app.use("/empresas", empresasRoutes);
-// app.use("/competencia", competenciaRoutes);
-// app.use("/status", statusRoutes);
+app.use("/pagamentos", pagamentosRoutes);
+app.use("/competencia", competenciaRoutes);
+app.use("/status", statusRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

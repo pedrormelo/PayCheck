@@ -26,37 +26,6 @@ exports.listarEmpresa = (req, res) => {
 };
 
 
-exports.buscarEmpresa = (req, res) => {
-    const { id } = req.params;
-    db.query(`SELECT * FROM empresas WHERE idEmp = ?`,  [id], (err, result) => {
-        if (err) {
-            return res.status(500).json({ error: "Erro ao buscar empresas." });
-        }
-        if (result.length === 0) {
-            return res.status(404).json({ error: "Empresa não empresas." });
-        }
-        res.json(result[0]);
-    });
-
-};
-
-
-exports. atualizarEmpresa = (req, res) => {
-    const { id } = req.params;
-    const { nomeEmp } = req.body;
-    const sql = "UPDATE empresas SET nomeEmp = ? WHERE idEmp = ?";
-
-
-    db.query(sql, [nomeEmp, id], (err, result) => {
-        if (err) {
-            return res.status(500).json({ error: "Erro ao atualizar empresa." });
-        }
-        res.json({ message: "Empresa atualizado com sucesso." });
-    });
-
-};
-
-
 exports.deletarEmpresa = (req, res) => {
     const { id } = req.params;
     db.query(`DELETE FROM empresas WHERE idEmp = ?`, [id], (err, result) => {
