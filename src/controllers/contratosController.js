@@ -110,8 +110,20 @@ exports.filtrarContrato = (req, res) => {
 //atualizar contrato
 exports. atualizarContrato = (req, res) => {
     const { id } = req.params;
-    const { idEmp, idStatus, idComp, dataVen, dataRen, valor } = req.body;
-    const sql = "UPDATE contratos SET idEmp = ?, idStatus = ?, idComp = ?, dataVen = ?, dataRen = ?, valor = ? WHERE idContrato = ?";
+    const { idEmp, idStatus, idComp, dataVen, valor } = req.body;
+    
+    if (!idEmp || !idStatus || !idComp || !dataVen || !valor) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios." });
+    }
+
+    // Recalcular a data de renovação (180 dias antes da nova dataVen)
+    const dataRen = moment(dataVen).subtract(180, "days").format("YYYY-MM-DD");
+
+    const sql = `
+        UPDATE contratos 
+        SET idEmp = ?, idStatus = ?, idComp = ?, dataVen = ?, dataRen = ?, valor = ? 
+        WHERE idContrato = ?
+        `;
 
 
     db.query(sql, [idEmp, idStatus, idComp, dataVen, dataRen, valor, id], (err, result) => {
