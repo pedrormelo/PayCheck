@@ -4,6 +4,7 @@ import { Check } from "lucide-react"
 import Link from "next/link"
 import Header from "@/app/components/header"
 import Footer from "@/app/components/footer"
+import Logo from "@/app/components/logo"
 
 export default function PaymentRegister({ params }: { params: { id: string } }) {
   return (
@@ -13,10 +14,7 @@ export default function PaymentRegister({ params }: { params: { id: string } }) 
       <div className="flex-1 container mx-auto px-4 py-6 flex flex-col items-center">
         <div className="w-full max-w-4xl">
           <div className="mb-6 text-center">
-            <h1 className="text-4xl font-bold">
-              <span className="text-black">Pay</span>
-              <span className="text-orange-500">Check!</span>
-            </h1>
+            <Logo />
           </div>
 
           <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
@@ -31,14 +29,7 @@ export default function PaymentRegister({ params }: { params: { id: string } }) 
 
                 <div>
                   <label className="block text-sm font-medium mb-1">VALOR</label>
-                  <div className="flex items-center gap-2">
-                    <Input type="text" placeholder="R$ 0,00" className="bg-gray-100" />
-                    <Link href="/calculate-value">
-                      <Button variant="outline" size="icon" className="bg-black text-white h-8 w-8 p-0">
-                        <span className="text-xs">✓</span>
-                      </Button>
-                    </Link>
-                  </div>
+                  <Input type="text" placeholder="R$ 0,00" className="bg-gray-100" />
                 </div>
 
                 <div className="col-span-2">

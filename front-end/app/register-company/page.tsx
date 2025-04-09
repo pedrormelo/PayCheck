@@ -4,6 +4,7 @@ import { Check, Plus } from "lucide-react"
 import Link from "next/link"
 import Header from "@/app/components/header"
 import Footer from "@/app/components/footer"
+import Logo from "@/app/components/logo"
 
 export default function RegisterCompany() {
   // Sample data for existing companies
@@ -16,10 +17,7 @@ export default function RegisterCompany() {
       <div className="flex-1 container mx-auto px-4 py-6 flex flex-col items-center">
         <div className="w-full max-w-4xl">
           <div className="mb-6 text-center">
-            <h1 className="text-4xl font-bold">
-              <span className="text-black">Pay</span>
-              <span className="text-orange-500">Check!</span>
-            </h1>
+            <Logo />
           </div>
 
           <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">

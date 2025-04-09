@@ -1,20 +1,29 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: 'Paycheck',
-  description: 'help of v0 ai',
-  generator: 'v0.dev',
+  title: "PayCheck!",
+  description: "Gerenciador de Contratos",
+  icons: {
+    icon: "/favicon.ico", // /public/favicon.ico
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
+    // You can add other icon sizes here if needed
+  },
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
-    <html lang="br">
-      <body>{children}</body>
+    <html lang="pt-BR">
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }

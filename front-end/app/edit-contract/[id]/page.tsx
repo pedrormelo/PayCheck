@@ -5,6 +5,7 @@ import { Trash2, Download, Paperclip, Check, Plus } from "lucide-react"
 import Link from "next/link"
 import Header from "@/app/components/header"
 import Footer from "@/app/components/footer"
+import Logo from "@/app/components/logo"
 
 export default function EditContract({ params }: { params: { id: string } }) {
   // In a real app, you would fetch the contract data based on the ID
@@ -25,10 +26,7 @@ export default function EditContract({ params }: { params: { id: string } }) {
       <div className="flex-1 container mx-auto px-4 py-6 flex flex-col items-center">
         <div className="w-full max-w-4xl">
           <div className="mb-6 text-center">
-            <h1 className="text-4xl font-bold">
-              <span className="text-black">Pay</span>
-              <span className="text-orange-500">Check!</span>
-            </h1>
+            <Logo />
           </div>
 
           <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
@@ -39,16 +37,18 @@ export default function EditContract({ params }: { params: { id: string } }) {
                 <div>
                   <label className="block text-sm font-medium mb-1">empresa</label>
                   <div className="flex items-center gap-2">
-                    <Select defaultValue={contractData.empresa} className="flex-grow">
-                      <SelectTrigger className="bg-gray-100">
-                        <SelectValue placeholder="Selecione a empresa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Empresa A">Empresa A</SelectItem>
-                        <SelectItem value="Empresa B">Empresa B</SelectItem>
-                        <SelectItem value="Empresa C">Empresa C</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex-grow">
+                      <Select defaultValue={contractData.empresa}>
+                        <SelectTrigger className="bg-gray-100">
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Empresa A">Empresa A</SelectItem>
+                          <SelectItem value="Empresa B">Empresa B</SelectItem>
+                          <SelectItem value="Empresa C">Empresa C</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Link href="/register-company">
                       <Button variant="outline" size="icon" className="bg-black text-white h-8 w-8 p-0 rounded-full">
                         <Plus className="h-4 w-4" />
@@ -92,14 +92,7 @@ export default function EditContract({ params }: { params: { id: string } }) {
 
                 <div>
                   <label className="block text-sm font-medium mb-1">VALOR:</label>
-                  <div className="flex items-center gap-2">
-                    <Input type="text" defaultValue={contractData.valor} className="bg-gray-100" />
-                    <Link href="/calculate-value">
-                      <Button variant="outline" size="icon" className="bg-black text-white h-8 w-8 p-0">
-                        <span className="text-xs">✓</span>
-                      </Button>
-                    </Link>
-                  </div>
+                  <Input type="text" defaultValue={contractData.valor} className="bg-gray-100" />
                 </div>
               </div>
 
