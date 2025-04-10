@@ -1,10 +1,18 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Plus } from "lucide-react"
 import Link from "next/link"
 import PageLayout from "./components/page-layout"
+import { ContractExpirationAlert } from "@/components/contract-expiration-alert"
+import { useToast } from "@/hooks/use-toast"
+import { useNotifications } from "@/hooks/use-notifications"
 
 export default function Home() {
+  const { toast } = useToast()
+  const { addNotification } = useNotifications()
+
   // Sample data for the table
   const contracts = [
     {
@@ -29,6 +37,9 @@ export default function Home() {
 
   return (
     <PageLayout>
+      {/* Contract Expiration Alert */}
+      <ContractExpirationAlert />
+
       <div className="flex flex-col md:flex-row items-center gap-2 w-full mb-4">
         <div className="relative w-full md:w-auto flex-grow">
           <Input
@@ -130,7 +141,18 @@ export default function Home() {
 
       <div className="mt-4 flex justify-end gap-2">
         <Link href="/register-contract">
-          <Button variant="outline" size="icon" className="rounded-full bg-black text-white h-10 w-10">
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full bg-black text-white h-10 w-10"
+            onClick={() => {
+              toast({
+                title: "Novo contrato",
+                description: "Iniciando cadastro de novo contrato",
+                variant: "info",
+              })
+            }}
+          >
             <Plus className="h-5 w-5" />
           </Button>
         </Link>

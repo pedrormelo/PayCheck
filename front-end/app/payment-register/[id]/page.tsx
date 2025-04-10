@@ -1,56 +1,79 @@
+"use client"
+
+import type React from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Check } from "lucide-react"
-import Link from "next/link"
-import Header from "@/app/components/header"
-import Footer from "@/app/components/footer"
-import Logo from "@/app/components/logo"
+import PageLayout from "@/app/components/page-layout"
+import { useParams, useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import { useNotifications } from "@/hooks/use-notifications"
 
-export default function PaymentRegister({ params }: { params: { id: string } }) {
+export default function PaymentRegister() {
+  const params = useParams()
+  const id = params.id as string
+  const router = useRouter()
+  const { toast } = useToast()
+  const { addNotification } = useNotifications()
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Show toast notification
+    toast({
+      title: "Pagamento registrado",
+      description: `O pagamento para o contrato #${id} foi registrado com sucesso`,
+      variant: "success",
+    })
+
+    // Add to notification center
+    addNotification({
+      title: "Novo pagamento",
+      message: `Pagamento registrado para o contrato #${id}`,
+      type: "success",
+    })
+
+    // Navigate back to contract details
+    router.push(`/contract-details/${id}`)
+
+    // In a real app, you would save this to your backend
+  }
+
   return (
-    <main className="min-h-screen flex flex-col bg-white">
-      <Header />
-
-      <div className="flex-1 container mx-auto px-4 py-6 flex flex-col items-center">
-        <div className="w-full max-w-4xl">
-          <div className="mb-6 text-center">
-            <Logo />
-          </div>
-
-          <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
-            <h2 className="text-2xl font-bold mb-6">Registrar Pagamento - Contrato {params.id}</h2>
-
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium mb-1">DATA DO PAGAMENTO</label>
-                  <Input type="date" className="bg-gray-100" />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">VALOR</label>
-                  <Input type="text" placeholder="R$ 0,00" className="bg-gray-100" />
-                </div>
-
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium mb-1">OBSERVAÇÕES</label>
-                  <Input className="bg-gray-100" />
-                </div>
+    <PageLayout title={`Registrar Pagamento - Contrato ${id}`}>
+      <form onSubmit={handleSubmit}>
+        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">DATA DO PAGAMENTO</label>
+                <Input type="date" className="bg-gray-100" required />
               </div>
 
-              <div className="flex justify-center mt-8">
-                <Link href={`/contract-details/${params.id}`}>
-                  <Button size="icon" className="bg-black text-white rounded-full h-8 w-8">
-                    <Check className="h-4 w-4" />
-                  </Button>
-                </Link>
+              <div>
+                <label className="block text-sm font-medium mb-1">VALOR</label>
+                <Input type="text" placeholder="R$ 0,00" className="bg-gray-100" required />
               </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium mb-1">OBSERVAÇÕES</label>
+                <Textarea
+                  className="bg-gray-100 min-h-[100px]"
+                  placeholder="Adicione informações relevantes sobre este pagamento. Estas observações serão visíveis no histórico de pagamentos."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-center mt-8">
+              <Button type="submit" size="icon" className="bg-black text-white rounded-full h-8 w-8">
+                <Check className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </div>
-      </div>
-
-      <Footer />
-    </main>
+      </form>
+    </PageLayout>
   )
 }
