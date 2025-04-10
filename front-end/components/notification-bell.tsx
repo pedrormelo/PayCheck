@@ -16,7 +16,7 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative text-white hover:bg-gray-800">
+        <Button className="relative text-white hover:bg-gray-800 bg-transparent h-9 w-9 p-0 rounded-full">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] text-white">
@@ -30,9 +30,7 @@ export function NotificationBell() {
           <h4 className="font-medium">Notificações</h4>
           {unreadCount > 0 && (
             <Button
-              variant="ghost"
-              size="sm"
-              className="h-auto p-1 text-xs"
+              className="h-auto p-1 text-xs bg-transparent hover:bg-gray-100"
               onClick={() => {
                 markAllAsRead()
                 setOpen(false)
