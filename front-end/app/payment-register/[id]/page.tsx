@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -18,8 +18,15 @@ export default function PaymentRegister() {
   const { toast } = useToast()
   const { addNotification } = useNotifications()
 
+  // Get today's date in YYYY-MM-DD format for the default value
+  const today = new Date().toISOString().split("T")[0]
+  const [paymentDate, setPaymentDate] = useState(today)
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Format the date for display (DD/MM/YYYY)
+    const formattedDate = new Date(paymentDate).toLocaleDateString("pt-BR")
 
     // Show toast notification
     toast({
@@ -31,7 +38,7 @@ export default function PaymentRegister() {
     // Add to notification center
     addNotification({
       title: "Novo pagamento",
-      message: `Pagamento registrado para o contrato #${id}`,
+      message: `Pagamento registrado para o contrato #${id} em ${formattedDate}`,
       type: "success",
     })
 
@@ -49,7 +56,13 @@ export default function PaymentRegister() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium mb-1">DATA DO PAGAMENTO</label>
-                <Input type="date" className="bg-gray-100" required />
+                <Input
+                  type="date"
+                  className="bg-gray-100"
+                  required
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                />
               </div>
 
               <div>

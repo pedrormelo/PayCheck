@@ -43,7 +43,7 @@ export default function Home() {
       <div className="flex flex-col md:flex-row items-center gap-2 w-full mb-4">
         <div className="relative w-full md:w-auto flex-grow">
           <Input
-            placeholder="buscar ID ou nome do contrato..."
+            placeholder="buscar ID ou nome da empresa..."
             className="pl-4 pr-10 py-2 bg-black text-white placeholder-gray-400 rounded-md w-full"
           />
         </div>

@@ -17,6 +17,9 @@ export default function RegisterContract() {
   const { toast } = useToast()
   const { addNotification } = useNotifications()
 
+  // Get today's date in YYYY-MM-DD format for the default value
+  const today = new Date().toISOString().split("T")[0]
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -47,7 +50,7 @@ export default function RegisterContract() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="col-span-3">
-                <label className="block text-sm font-medium mb-1">empresa</label>
+                <label className="block text-sm font-medium mb-1">EMPRESA</label>
                 <div className="flex items-center gap-2">
                   <div className="flex-grow">
                     <Select>
@@ -70,7 +73,7 @@ export default function RegisterContract() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">competência</label>
+                <label className="block text-sm font-medium mb-1">COMPETÊNCIA</label>
                 <Select>
                   <SelectTrigger className="bg-gray-100">
                     <SelectValue placeholder="Selecione" />
@@ -84,7 +87,7 @@ export default function RegisterContract() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">situação</label>
+                <label className="block text-sm font-medium mb-1">SITUAÇÃO</label>
                 <Select>
                   <SelectTrigger className="bg-gray-100">
                     <SelectValue placeholder="Selecione" />
@@ -105,6 +108,11 @@ export default function RegisterContract() {
               <div>
                 <label className="block text-sm font-medium mb-1">VALOR</label>
                 <Input type="text" placeholder="R$ 0,00" className="bg-gray-100" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">ÚLTIMO PAGAMENTO</label>
+                <Input type="date" className="bg-gray-100" defaultValue={today} />
               </div>
             </div>
 

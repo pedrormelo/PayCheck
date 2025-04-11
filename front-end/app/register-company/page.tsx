@@ -26,12 +26,27 @@ export default function RegisterCompany() {
   const { toast } = useToast()
   const { addNotification } = useNotifications()
   const [companyToDelete, setCompanyToDelete] = useState<string | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   // Sample data for existing companies
   const [companies, setCompanies] = useState(["EMPRESA 1", "EMPRESA 2", "EMPRESA 3"])
+  const [newCompanyName, setNewCompanyName] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!newCompanyName.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, digite o nome da empresa",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Add the new company to the list
+    setCompanies([...companies, newCompanyName.toUpperCase()])
+    setNewCompanyName("")
 
     // Show toast notification
     toast({
@@ -43,14 +58,16 @@ export default function RegisterCompany() {
     // Add to notification center
     addNotification({
       title: "Nova empresa",
-      message: "Uma nova empresa foi cadastrada no sistema",
+      message: `A empresa ${newCompanyName.toUpperCase()} foi cadastrada no sistema`,
       type: "success",
     })
 
-    // Navigate back to register contract page
-    router.push("/register-contract")
-
     // In a real app, you would save this to your backend
+  }
+
+  const confirmDeleteCompany = (company: string) => {
+    setCompanyToDelete(company)
+    setShowDeleteDialog(true)
   }
 
   const handleDeleteCompany = () => {
@@ -72,7 +89,8 @@ export default function RegisterCompany() {
         type: "warning",
       })
 
-      // Reset company to delete
+      // Close the dialog and reset company to delete
+      setShowDeleteDialog(false)
       setCompanyToDelete(null)
 
       // In a real app, you would delete this from your backend
@@ -86,7 +104,12 @@ export default function RegisterCompany() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium mb-1">NOME DA EMPRESA</label>
-              <Input placeholder="Digite o nome da empresa" className="bg-gray-100" />
+              <Input
+                placeholder="Digite o nome da empresa"
+                className="bg-gray-100"
+                value={newCompanyName}
+                onChange={(e) => setNewCompanyName(e.target.value)}
+              />
             </div>
 
             <div>
@@ -99,7 +122,7 @@ export default function RegisterCompany() {
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
-                      onClick={() => setCompanyToDelete(company)}
+                      onClick={() => confirmDeleteCompany(company)}
                     >
                       <Trash className="h-4 w-4" />
                     </Button>
@@ -121,7 +144,7 @@ export default function RegisterCompany() {
       </form>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!companyToDelete} onOpenChange={(open) => !open && setCompanyToDelete(null)}>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
@@ -130,7 +153,7 @@ export default function RegisterCompany() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteCompany} className="bg-red-600 hover:bg-red-700">
               Excluir
             </AlertDialogAction>

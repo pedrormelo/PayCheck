@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Trash2, Download, Upload, Edit, Clock, DollarSign, Check } from "lucide-react"
+import { Trash2, Download, Upload, Edit, Clock, DollarSign, Check, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import PageLayout from "@/app/components/page-layout"
 import { useParams, useRouter } from "next/navigation"
@@ -30,6 +30,8 @@ export default function ContractDetails() {
   // Sample contract data
   const [status, setStatus] = useState("ATIVO")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showPaymentAlert, setShowPaymentAlert] = useState(false)
+  const [monthsLate, setMonthsLate] = useState(0)
 
   const contract = {
     id: id,
@@ -39,7 +41,27 @@ export default function ContractDetails() {
     empresa: "EMPRESA PADRÃO",
     valor: "R$ 65.000,00",
     anexo: "contrato.pdf",
+    ultimoPagamento: "15/01/2025",
   }
+
+  // Calculate months late
+  useEffect(() => {
+    // In a real app, this would be calculated based on actual payment data
+    // For now, we'll simulate it
+    const today = new Date()
+    const lastPaymentDate = new Date(
+      Number.parseInt(contract.ultimoPagamento.split("/")[2]),
+      Number.parseInt(contract.ultimoPagamento.split("/")[1]) - 1,
+      Number.parseInt(contract.ultimoPagamento.split("/")[0]),
+    )
+
+    const diffTime = today.getTime() - lastPaymentDate.getTime()
+    const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30))
+
+    // Assuming monthly payments, subtract 1 to get months late (1 month grace period)
+    const late = Math.max(0, diffMonths - 1)
+    setMonthsLate(late)
+  }, [contract.ultimoPagamento])
 
   const handleStatusChange = (newStatus: string) => {
     setStatus(newStatus)
@@ -114,12 +136,38 @@ export default function ContractDetails() {
             <div className="bg-white p-2 rounded">{contract.valor}</div>
           </div>
           <div>
+            <div className="text-sm font-medium mb-1">ÚLTIMO PAGAMENTO:</div>
+            <div className="bg-white p-2 rounded">{contract.ultimoPagamento}</div>
+          </div>
+          <div>
+            <div className="text-sm font-medium mb-1">MESES ATRASADOS:</div>
+            <div className="flex items-center gap-2">
+              <div
+                className={`bg-white p-2 rounded flex-grow flex items-center ${
+                  monthsLate > 0 ? "font-medium" : ""
+                }`}
+              >
+                {monthsLate > 0 ? `${monthsLate} ${monthsLate === 1 ? "Mês" : "Meses"}` : "Em dia"}
+              </div>
+              {monthsLate > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-orange-100 text-amber-500 h-8 w-8 p-0 rounded-full"
+                  onClick={() => setShowPaymentAlert(true)}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+          <div>
             <div className="text-sm font-medium mb-1">STATUS:</div>
             <div className="flex items-center gap-2">
               <div className="bg-white p-2 rounded flex-grow flex items-center">
                 <span
                   className={`inline-block w-3 h-3 rounded-full mr-2 ${
-                    status === "ATIVO" ? "bg-green-600" : status === "PENDENTE" ? "bg-yellow-600" : "bg-red-600"
+                    status === "ATIVO" ? "bg-green-600" : status === "PENDENTE" ? "bg-amber-400" : "bg-red-600"
                   }`}
                 ></span>
                 {status}
@@ -135,7 +183,7 @@ export default function ContractDetails() {
                     <span className="text-green-600 mr-2">●</span> ATIVO
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleStatusChange("PENDENTE")}>
-                    <span className="text-yellow-600 mr-2">●</span> PENDENTE
+                    <span className="text-amber-400 mr-2">●</span> PENDENTE
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleStatusChange("CANCELADO")}>
                     <span className="text-red-600 mr-2">●</span> CANCELADO
@@ -211,6 +259,29 @@ export default function ContractDetails() {
             <AlertDialogAction onClick={handleDeleteContract} className="bg-red-600 hover:bg-red-700">
               Excluir
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
+      {/* Payment Alert Dialog */}
+      <AlertDialog open={showPaymentAlert} onOpenChange={setShowPaymentAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-amber-500">
+              <AlertTriangle className="h-5 w-5" />
+              Pagamento Atrasado
+            </AlertDialogTitle>
+            <div className="text-sm text-muted-foreground space-y-4">
+              Este contrato está com {monthsLate} {monthsLate === 1 ? "mês" : "meses"} de atraso. Último pagamento em{" "}
+              {contract.ultimoPagamento}.<div className="pt-2">Deseja registrar um novo pagamento agora?</div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Fechar</AlertDialogCancel>
+            <Link href={`/payment-register/${id}`}>
+              <AlertDialogAction className="bg-black hover:bg-gray-800">Registrar pagamento</AlertDialogAction>
+            </Link>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

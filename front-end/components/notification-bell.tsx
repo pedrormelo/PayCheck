@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -10,8 +10,26 @@ import { cn } from "@/lib/utils"
 export function NotificationBell() {
   const { notifications, markAllAsRead, markAsRead } = useNotifications()
   const [open, setOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  // Update unread count whenever notifications change
+  useEffect(() => {
+    const count = notifications.filter((n) => !n.read).length
+    setUnreadCount(count)
+  }, [notifications])
+
+  // Add a sample notification if there are none (for demo purposes)
+  useEffect(() => {
+    if (notifications.length === 0) {
+      // This would be removed in a production app
+      const { addNotification } = useNotifications.getState()
+      addNotification({
+        title: "Bem-vindo ao PayCheck!",
+        message: "Este é o sistema de gerenciamento de contratos.",
+        type: "info",
+      })
+    }
+  }, [notifications.length])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -30,7 +48,9 @@ export function NotificationBell() {
           <h4 className="font-medium">Notificações</h4>
           {unreadCount > 0 && (
             <Button
-              className="h-auto p-1 text-xs bg-transparent hover:bg-gray-100"
+              variant="outline"
+              size="sm"
+              className="text-xs border border-gray-300 hover:bg-gray-100"
               onClick={() => {
                 markAllAsRead()
                 setOpen(false)

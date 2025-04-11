@@ -11,9 +11,10 @@ export const metadata: Metadata = {
   title: "PayCheck!",
   description: "Gerenciador de Contratos",
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-icon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
   },
 }
 
@@ -32,3 +33,6 @@ export default function RootLayout({
     </html>
   )
 }
+
+
+import './globals.css'

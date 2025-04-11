@@ -64,7 +64,9 @@ export function FloatingNotification() {
             <div className="flex justify-between items-start">
               <h4 className="font-medium text-gray-900">{currentNotification.title}</h4>
               <Button
-                className="h-6 w-6 p-0 rounded-full -mt-1 -mr-1 bg-transparent hover:bg-gray-100"
+                variant="outline"
+                size="sm"
+                className="h-6 w-6 p-0 rounded-full -mt-1 -mr-1 bg-transparent hover:bg-gray-100 border-0"
                 onClick={() => setVisible(false)}
               >
                 <X className="h-4 w-4" />

@@ -32,10 +32,27 @@ export default function PaymentHistory() {
     },
   ]
 
+  // Get the most recent payment date
+  const lastPaymentDate = payments.length > 0 ? payments[0].date : "Nenhum pagamento registrado"
+
   return (
     <PageLayout title={`Histórico de Pagamentos - Contrato ${id}`}>
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
         <div className="space-y-4">
+          <div className="bg-gray-100 p-3 rounded-md mb-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <span className="text-sm font-medium">Último pagamento:</span>
+                <span className="ml-2">{lastPaymentDate}</span>
+              </div>
+              <Link href={`/payment-register/${id}`}>
+                <Button variant="outline" size="sm" className="bg-black text-white">
+                  Registrar novo pagamento
+                </Button>
+              </Link>
+            </div>
+          </div>
+
           <div className="overflow-hidden rounded-md border">
             <table className="w-full">
               <thead>

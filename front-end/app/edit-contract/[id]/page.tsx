@@ -40,6 +40,7 @@ export default function EditContract() {
     dataVen: "2025-01-15",
     valor: "5000.00",
     anexo: "contrato.pdf",
+    ultimoPagamento: "2025-01-05", // Added last payment date
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -96,7 +97,7 @@ export default function EditContract() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium mb-1">empresa</label>
+                <label className="block text-sm font-medium mb-1">EMPRESA</label>
                 <div className="flex items-center gap-2">
                   <div className="flex-grow">
                     <Select defaultValue={contractData.empresa}>
@@ -119,7 +120,7 @@ export default function EditContract() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">competência</label>
+                <label className="block text-sm font-medium mb-1">COMPETÊNCIA</label>
                 <Select defaultValue={contractData.competencia}>
                   <SelectTrigger className="bg-gray-100">
                     <SelectValue placeholder="Selecione a competência" />
@@ -133,7 +134,7 @@ export default function EditContract() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">situação</label>
+                <label className="block text-sm font-medium mb-1">SITUAÇÃO</label>
                 <Select defaultValue={contractData.situacao}>
                   <SelectTrigger className="bg-gray-100">
                     <SelectValue placeholder="Selecione a situação" />
@@ -154,6 +155,11 @@ export default function EditContract() {
               <div>
                 <label className="block text-sm font-medium mb-1">VALOR:</label>
                 <Input type="text" defaultValue={contractData.valor} className="bg-gray-100" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">ÚLTIMO PAGAMENTO:</label>
+                <Input type="date" defaultValue={contractData.ultimoPagamento} className="bg-gray-100" />
               </div>
             </div>
 

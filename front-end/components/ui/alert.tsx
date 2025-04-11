@@ -35,7 +35,8 @@ const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<H
 )
 AlertTitle.displayName = "AlertTitle"
 
-const AlertDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+// Modified to use div instead of p to allow nested elements
+const AlertDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn("text-sm [&_p]:leading-relaxed", className)} {...props} />
   ),
