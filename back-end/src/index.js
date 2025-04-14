@@ -2,11 +2,14 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+
+const testeRoutes = require("./routes/teste");
 const contratosRoutes = require("./routes/contratosRoutes");
 const empresasRoutes = require("./routes/empresasRoutes");
 const pagamentosRoutes = require("./routes/pagamentosRoutes");
 const competenciaRoutes = require("./routes/competenciaRoutes");
 const statusRoutes = require("./routes/statusRoutes");
+
 
 const app = express();
 
@@ -18,6 +21,7 @@ app.use(cors({
 app.use(express.json());
 
 //rotas
+app.use('/', testeRoutes);
 app.use("/contratos", contratosRoutes);
 app.use("/empresas", empresasRoutes);
 app.use("/pagamentos", pagamentosRoutes);

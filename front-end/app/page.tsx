@@ -1,5 +1,6 @@
 "use client"
 
+import { AxiosResponse, AxiosError } from "axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Plus } from "lucide-react"
@@ -8,80 +9,92 @@ import PageLayout from "./components/page-layout"
 import { ContractExpirationAlert } from "@/components/contract-expiration-alert"
 import { useToast } from "@/hooks/use-toast"
 import { useNotifications } from "@/hooks/use-notifications"
+import { useEffect, useState } from "react"
+
+import api from "@/lib/api"
 
 export default function Home() {
   const { toast } = useToast()
   const { addNotification } = useNotifications()
 
-  // Sample data for the table
-  const contracts = [
-    {
-      id: "123",
-      empresa: "Empresa A",
-      competencia: "01/2024",
-      situacao: "Em dia",
-      dataVen: "10/01/2024",
-      dataRen: "10/01/2025",
-      valor: "1000",
-    },
-    {
-      id: "456",
-      empresa: "Empresa B",
-      competencia: "02/2024",
-      situacao: "Atrasado",
-      dataVen: "10/02/2024",
-      dataRen: "10/02/2025",
-      valor: "2000",
-    },
-  ]
+  const [contracts, setContracts] = useState<any[]>([])
+  const [statusList, setStatusList] = useState<string[]>([])
+  const [competenciaList, setCompetenciaList] = useState<string[]>([])
+
+  const [search, setSearch] = useState("")
+  const [filtroStatus, setFiltroStatus] = useState("")
+  const [filtroComp, setFiltroComp] = useState("")
+
+  // Carrega contratos e opções de filtro ao iniciar
+  useEffect(() => {
+    api.get("/contratos").then((res: AxiosResponse) => setContracts(res.data))
+    
+    api.get("/status").then((res: AxiosResponse) => {
+      const nomes = res.data.map((s: any) => s.nomeStatus)
+      setStatusList(nomes)
+    })
+    
+    api.get("/competencia").then((res: AxiosResponse) => {
+      const comps = res.data.map((c: any) => `${c.mesPag}/${c.anoPag}`)
+      setCompetenciaList(comps)
+    })
+    
+  }, [])
+
+  // Função para aplicar os filtros
+  const aplicarFiltros = () => {
+    api
+      .get("/contratos/filtrar", {
+        params: {
+          search,
+          status: filtroStatus,
+          competencia: filtroComp,
+        },
+      })
+      .then((res: AxiosResponse) => setContracts(res.data))
+      .catch((err: AxiosError) => console.error("Erro ao filtrar:", err))
+  }
 
   return (
     <PageLayout>
-      {/* Contract Expiration Alert */}
       <ContractExpirationAlert />
 
       <div className="flex flex-col md:flex-row items-center gap-2 w-full mb-4">
         <div className="relative w-full md:w-auto flex-grow">
           <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="buscar ID ou nome da empresa..."
             className="pl-4 pr-10 py-2 bg-black text-white placeholder-gray-400 rounded-md w-full"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <Button
-            variant="outline"
-            className="bg-black text-white border-gray-600 rounded-md px-4 py-2 flex items-center gap-1"
+          <select
+            className="bg-black text-white border-gray-600 rounded-md px-4 py-2"
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
           >
-            situação
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="ml-1"
-            >
-              <path d="M6 9L2 5H10L6 9Z" fill="white" />
-            </svg>
-          </Button>
+            <option value="">situação</option>
+            {statusList.map((s, i) => (
+              <option key={i} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
 
-          <Button
-            variant="outline"
-            className="bg-black text-white border-gray-600 rounded-md px-4 py-2 flex items-center gap-1"
+          <select
+            className="bg-black text-white border-gray-600 rounded-md px-4 py-2"
+            value={filtroComp}
+            onChange={(e) => setFiltroComp(e.target.value)}
           >
-            competência
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="ml-1"
-            >
-              <path d="M6 9L2 5H10L6 9Z" fill="white" />
-            </svg>
-          </Button>
+            <option value="">competência</option>
+            {competenciaList.map((c, i) => (
+              <option key={i} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -91,37 +104,25 @@ export default function Home() {
             <thead>
               <tr className="bg-gray-200">
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">ID</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  EMPRESA
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  COMPETÊNCIA
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  SITUAÇÃO
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  DATA VEN
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  DATA REN
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  VALOR
-                </th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">EMPRESA</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">COMPETÊNCIA</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">SITUAÇÃO</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">DATA VEN</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">DATA REN</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">VALOR</th>
               </tr>
             </thead>
             <tbody className="bg-gray-100">
               {contracts.map((contract, index) => (
                 <tr key={index}>
                   <td className="px-4 py-2">
-                    <Link href={`/contract-details/${contract.id}`} className="hover:underline">
-                      {contract.id}
+                    <Link href={`/contract-details/${contract.idContrato}`} className="hover:underline">
+                      {contract.idContrato}
                     </Link>
                   </td>
-                  <td className="px-4 py-2">{contract.empresa}</td>
-                  <td className="px-4 py-2">{contract.competencia}</td>
-                  <td className="px-4 py-2">{contract.situacao}</td>
+                  <td className="px-4 py-2">{contract.nomeEmp}</td>
+                  <td className="px-4 py-2">{`${contract.mesPag}/${contract.anoPag}`}</td>
+                  <td className="px-4 py-2">{contract.nomeStatus}</td>
                   <td className="px-4 py-2">{contract.dataVen}</td>
                   <td className="px-4 py-2">{contract.dataRen}</td>
                   <td className="px-4 py-2">{contract.valor}</td>
@@ -156,7 +157,13 @@ export default function Home() {
             <Plus className="h-5 w-5" />
           </Button>
         </Link>
-        <Button variant="outline" size="icon" className="rounded-full bg-black text-white h-10 w-10">
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="rounded-full bg-black text-white h-10 w-10"
+          onClick={aplicarFiltros}
+        >
           <Search className="h-5 w-5" />
         </Button>
       </div>
