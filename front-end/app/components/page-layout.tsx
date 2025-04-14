@@ -11,9 +11,11 @@ interface PageLayoutProps {
 export default function PageLayout({ children, title }: PageLayoutProps) {
   return (
     <main className="min-h-screen flex flex-col bg-white">
-      <Header />
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <Header />
+      </div>
 
-      <div className="flex-1 container mx-auto px-4 py-6 flex flex-col items-center">
+      <div className="flex-1 container mx-auto px-4 pt-16 pb-20 flex flex-col items-center">
         <div className="w-full max-w-4xl">
           <div className="mb-6 text-center">
             <Logo />
@@ -29,7 +31,9 @@ export default function PageLayout({ children, title }: PageLayoutProps) {
         </div>
       </div>
 
-      <Footer />
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <Footer />
+      </div>
     </main>
   )
 }
