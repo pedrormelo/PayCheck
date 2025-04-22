@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell } from "lucide-react"
+import { Bell, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useNotifications } from "@/hooks/use-notifications"
 import { cn } from "@/lib/utils"
 
 export function NotificationBell() {
-  const { notifications, markAllAsRead, markAsRead } = useNotifications()
+  const { notifications, markAllAsRead, markAsRead, clearAll } = useNotifications()
   const [open, setOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -46,21 +46,29 @@ export function NotificationBell() {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between border-b p-3">
           <h4 className="font-medium">Notificações</h4>
-          {unreadCount > 0 && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs border border-gray-300 hover:bg-gray-100"
+              onClick={() => markAllAsRead()}
+            >
+              Marcar como lidas
+            </Button>
             <Button
               variant="outline"
               size="sm"
               className="text-xs border border-gray-300 hover:bg-gray-100"
               onClick={() => {
-                markAllAsRead()
+                clearAll()
                 setOpen(false)
               }}
             >
-              Marcar todas como lidas
+              <Trash2 className="h-3 w-3" />
             </Button>
-          )}
+          </div>
         </div>
-        <div className="max-h-80 overflow-auto">
+        <div className="max-h-80 overflow-auto custom-scrollbar">
           {notifications.length === 0 ? (
             <div className="p-4 text-center text-sm text-gray-500">Nenhuma notificação</div>
           ) : (

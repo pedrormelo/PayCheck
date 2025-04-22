@@ -1,4 +1,8 @@
+"use client"
+
 import type React from "react"
+
+import { useEffect, useState, useRef } from "react"
 import Header from "./header"
 import Footer from "./footer"
 import Logo from "./logo"
@@ -9,15 +13,29 @@ interface PageLayoutProps {
 }
 
 export default function PageLayout({ children, title }: PageLayoutProps) {
+  const [logoInHeader, setLogoInHeader] = useState(false)
+  const logoRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (logoRef.current) {
+        const logoPosition = logoRef.current.getBoundingClientRect().top
+        // If logo is scrolled above the viewport, show it in header
+        setLogoInHeader(logoPosition < 0)
+      }
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
   return (
     <main className="min-h-screen flex flex-col bg-white">
-      <div className="fixed top-0 left-0 right-0 z-50">
-        <Header />
-      </div>
+      <Header showLogo={logoInHeader} />
 
-      <div className="flex-1 container mx-auto px-4 pt-16 pb-20 flex flex-col items-center">
+      <div className="flex-1 container mx-auto px-4 py-6 flex flex-col items-center">
         <div className="w-full max-w-4xl">
-          <div className="mb-6 text-center">
+          <div ref={logoRef} className="mb-6 text-center">
             <Logo />
           </div>
 
@@ -31,9 +49,7 @@ export default function PageLayout({ children, title }: PageLayoutProps) {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        <Footer />
-      </div>
+      <Footer />
     </main>
   )
 }

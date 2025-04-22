@@ -1,4 +1,4 @@
-// front-end/lib/api.ts
+// front-end/lib/api.js
 import axios from "axios"
 
 const api = axios.create({

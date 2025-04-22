@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Trash2, Download, Upload, Edit, Clock, DollarSign, Check, AlertTriangle } from "lucide-react"
+import { Trash2, Download, Upload, Edit, Clock, DollarSign, AlertTriangle, CircleSlash } from "lucide-react"
 import Link from "next/link"
 import PageLayout from "@/app/components/page-layout"
 import { useParams, useRouter } from "next/navigation"
@@ -108,7 +108,7 @@ export default function ContractDetails() {
   }
 
   return (
-    <PageLayout>
+    <PageLayout title={`Detalhes do Contrato #${id}`}>
       <div className="bg-gray-200 rounded-md p-6">
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
@@ -144,16 +144,16 @@ export default function ContractDetails() {
             <div className="flex items-center gap-2">
               <div
                 className={`bg-white p-2 rounded flex-grow flex items-center ${
-                  monthsLate > 0 ? "font-medium" : ""
+                  monthsLate > 0 ? "text-black-600 font-medium" : ""
                 }`}
               >
-                {monthsLate > 0 ? `${monthsLate} ${monthsLate === 1 ? "Mês" : "Meses"}` : "Em dia"}
+                {monthsLate > 0 ? `${monthsLate} ${monthsLate === 1 ? "MÊS" : "MESES"}` : "Em dia"}
               </div>
               {monthsLate > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-orange-100 text-amber-500 h-8 w-8 p-0 rounded-full"
+                  className="bg-orange-100 text-orange-600 h-8 w-8 p-0 rounded-full"
                   onClick={() => setShowPaymentAlert(true)}
                 >
                   <AlertTriangle className="h-4 w-4" />
@@ -175,7 +175,7 @@ export default function ContractDetails() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
-                    <Check className="h-4 w-4" />
+                    <CircleSlash className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -192,22 +192,20 @@ export default function ContractDetails() {
               </DropdownMenu>
             </div>
           </div>
-        </div>
-
-        {/* Anexo section */}
-        <div className="mt-4">
-          <div className="text-sm font-medium mb-1">ANEXO:</div>
-          <div className="flex items-center gap-2">
-            <div className="bg-white p-2 rounded flex-grow">{contract.anexo}</div>
-            <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
-              <Upload className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <div>
+            <div className="text-sm font-medium mb-1">ANEXO:</div>
+            <div className="flex items-center gap-2">
+              <div className="bg-white p-2 rounded flex-grow">{contract.anexo}</div>
+              <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
+                <Upload className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -262,7 +260,6 @@ export default function ContractDetails() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
 
       {/* Payment Alert Dialog */}
       <AlertDialog open={showPaymentAlert} onOpenChange={setShowPaymentAlert}>
