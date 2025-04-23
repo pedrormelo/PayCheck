@@ -28,19 +28,20 @@ exports.criarContrato = (req, res) => {
     });
 }   
 
+
 exports.listarContratos = (req, res) => {
     const sql = `
         SELECT
             contratos.idContrato, contratos.idEmp, contratos.idStatus, contratos.idComp,
             contratos.dataVen, contratos.dataRen, contratos.valor,
             empresas.nomeEmp,
-            situacao.nomeStatus,
+            status.nomeStatus,
             competencia.mesPag, competencia.anoPag
         FROM contratos
         LEFT JOIN empresas ON contratos.idEmp = empresas.idEmp
-        LEFT JOIN situacao ON contratos.idStatus = situacao.idStatus
+        LEFT JOIN status ON contratos.idStatus = status.idStatus
         LEFT JOIN competencia ON contratos.idComp = competencia.idComp
-    `;
+    `
 
     db.query(sql, (err, results) => {
         if (err) {
@@ -48,44 +49,44 @@ exports.listarContratos = (req, res) => {
             return res.status(500).json({ error: "Erro ao listar contratos." });
         }
         res.json(results);
-    });
+    })
 }
 
 exports.filtrarContrato = (req, res) => {
-    const { search = "", status = "", competencia = "" } = req.query;
+    const { search = "", status = "", competencia = "" } = req.query
 
     const sql = `
         SELECT 
             contratos.idContrato, contratos.idEmp, contratos.idStatus, contratos.idComp,
             contratos.dataVen, contratos.dataRen, contratos.valor,
             empresas.nomeEmp,
-            situacao.nomeStatus,
+            status.nomeStatus,
             competencia.mesPag, competencia.anoPag
         FROM contratos
         LEFT JOIN empresas ON contratos.idEmp = empresas.idEmp
-        LEFT JOIN situacao ON contratos.idStatus = situacao.idStatus
+        LEFT JOIN status ON contratos.idStatus = status.idStatus
         LEFT JOIN competencia ON contratos.idComp = competencia.idComp
         WHERE (
             contratos.idContrato LIKE ?
             OR empresas.nomeEmp LIKE ?
         )
-        AND (? = '' OR situacao.situacao = ?)
+        AND (? = '' OR status.nomeStatus = ?)
         AND (? = '' OR CONCAT(competencia.mesPag, '/', competencia.anoPag) = ?)
-    `;
+    `
 
-    const likeSearch = `%${search}%`;
+    const likeSearch = `%${search}%`
 
     db.query(
         sql,
         [likeSearch, likeSearch, status, status, competencia, competencia],
         (err, results) => {
             if (err) {
-                console.error("Erro ao filtrar contratos:", err);
-                return res.status(500).json({ error: "Erro ao filtrar contratos" });
+                console.error("Erro ao filtrar contratos:", err)
+                return res.status(500).json({ error: "Erro ao filtrar contratos" })
             }
-            res.json(results);
+            res.json(results)
         }
-    );
+    )
 }
 
 //atualizar contrato

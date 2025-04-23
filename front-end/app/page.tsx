@@ -32,38 +32,27 @@ export default function Home() {
     const [search, setSearch] = useState("")
     const [filtroStatus, setFiltroStatus] = useState("")
     const [filtroComp, setFiltroComp] = useState("")
-    const [statusList, setStatusList] = useState<any[]>([])
+    const [statusList, setStatusList] = useState<string[]>([])
     const [competenciaList, setCompetenciaList] = useState<string[]>([])
 
     useEffect(() => {
-        Promise.all([
-            api.get("/contratos"),
-            api.get("/status"),
-            api.get("/competencia"),
-            api.get("/empresas")
-        ]).then(([resContratos, resStatus, resComp, resEmp]) => {
-            const status = resStatus.data
-            const competencias = resComp.data.map((c: any) => `${c.mesPag}/${c.anoPag}`)
-            const empresas = resEmp.data
+        api.get("/contratos").then((res) => {
+            const contratos = res.data
 
-            const contratosCompletos = resContratos.data.map((contrato: any) => {
-                const situacao = status.find((s: any) => Number(s.idStatus) === Number(contrato.idStatus))
-                const comp = resComp.data.find((c: any) => Number(c.idComp) === Number(contrato.idComp))
-                const empresa = empresas.find((e: any) => Number(e.idEmp) === Number(contrato.idEmp))
+            setContracts(contratos)
+            setFilteredContracts(contratos)
 
-                return {
-                    ...contrato,
-                    nomeStatus: situacao ? situacao.nomeStatus : "--",
-                    mesPag: comp ? comp.mesPag : "--",
-                    anoPag: comp ? comp.anoPag : "--",
-                    nomeEmp: empresa ? empresa.nomeEmp : "--",
-                }
+            // Gerar listas únicas para filtros
+            const statusSet = new Set<string>()
+            const compSet = new Set<string>()
+
+            contratos.forEach((c: any) => {
+                if (c.nomeStatus) statusSet.add(String(c.nomeStatus))
+                if (c.mesPag && c.anoPag) compSet.add(`${c.mesPag}/${c.anoPag}`)
             })
 
-            setContracts(contratosCompletos)
-            setFilteredContracts(contratosCompletos)
-            setStatusList(status.map((s: any) => s.nomeStatus))
-            setCompetenciaList(competencias)
+            setStatusList(Array.from(statusSet))
+            setCompetenciaList(Array.from(compSet))
         })
     }, [])
 
@@ -98,7 +87,7 @@ export default function Home() {
                 />
 
                 <select
-                    className="bg-black text-white rounded-full px-4 py-2 min-w-[120px]"
+                    className="bg-black text-white rounded-full px-4 py-2 min-w-[120px] cursor-pointer"
                     value={filtroStatus}
                     onChange={(e) => setFiltroStatus(e.target.value)}
                 >
@@ -109,7 +98,7 @@ export default function Home() {
                 </select>
 
                 <select
-                    className="bg-black text-white rounded-full px-4 py-2 min-w-[140px]"
+                    className="bg-black text-white rounded-full px-4 py-2 min-w-[140px] max-h-[200px] overflow-y-auto cursor-pointer"
                     value={filtroComp}
                     onChange={(e) => setFiltroComp(e.target.value)}
                 >
@@ -131,7 +120,7 @@ export default function Home() {
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-[15%]">SITUAÇÃO</th>
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-[15%]">DATA VEN</th>
                                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-[15%]">DATA REN</th>
-                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-[10%]">VALOR</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-[15%]">VALOR</th>
                             </tr>
                         </thead>
                         <tbody className="bg-gray-100">
