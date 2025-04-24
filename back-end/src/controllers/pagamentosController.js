@@ -12,9 +12,12 @@ exports.registrarPagamento = (req, res) => {
         return res.status(400).json({ error: "Todos os campos são obrigatórios." });
     }
 
-    const sql = "INSERT INTO contratos_competencia (idContrato, idComp, dataPag) VALUES (?, ?, ?)";
+    const sql = `
+                    INSERT INTO contratos_competencia (idContrato, idComp, dataPag, observacao, valorPago) 
+                    VALUES (?, ?, ?, ?, ?)
+                `;
 
-    db.query(sql, [idContrato, idComp, dataPag], (err, result) => {
+    db.query(sql, [idContrato, idComp, dataPag, observacao, valorPago], (err, result) => {
         if (err) {
             console.error("Erro ao registrar pagamento:", err);
             return res.status(500).json({ error: "Erro ao registrar pagamento." });
@@ -89,7 +92,7 @@ exports.calcularAtraso = (req, res) => {
 };
 
 exports.ultimoPagamento = (req, res) => {
-    const { idContrato} = req.params;
+    const { idContrato } = req.params;
     
     const sql = `
         SELECT MAX(dataPag) as ultimoPagamento

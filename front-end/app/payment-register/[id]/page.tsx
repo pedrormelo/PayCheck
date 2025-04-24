@@ -1,89 +1,129 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
 import { Check } from "lucide-react"
 import PageLayout from "@/app/components/page-layout"
-import { useParams, useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
-import { useNotifications } from "@/hooks/use-notifications"
+import api from "@/lib/api"
 
 export default function PaymentRegister() {
-  const params = useParams()
-  const id = params.id as string
   const router = useRouter()
   const { toast } = useToast()
-  const { addNotification } = useNotifications()
+  const params = useSearchParams()
 
-  // Get today's date in YYYY-MM-DD format for the default value
+  const idContrato = params.get("id") || ""
+
+  const [competencias, setCompetencias] = useState<any[]>([])
+  const [idComp, setIdComp] = useState("")
+  const [dataPag, setDataPag] = useState("")
+  const [valorPago, setValorPago] = useState("")
+  const [observacao, setObservacao] = useState("")
+
   const today = new Date().toISOString().split("T")[0]
-  const [paymentDate, setPaymentDate] = useState(today)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    api.get("/competencia").then((res) => {
+      setCompetencias(res.data)
+    })
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Format the date for display (DD/MM/YYYY)
-    const formattedDate = new Date(paymentDate).toLocaleDateString("pt-BR")
+    if (!idComp || !dataPag || !valorPago) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios",
+        variant: "destructive",
+      })
+      return
+    }
 
-    // Show toast notification
-    toast({
-      title: "Pagamento registrado",
-      description: `O pagamento para o contrato #${id} foi registrado com sucesso`,
-      variant: "success",
-    })
+    try {
+      await api.post(`/pagamentos/${idContrato}`, {
+        idContrato: Number(idContrato),
+        idComp: Number(idComp),
+        dataPag,
+        valorPago,
+        observacao,
+      })
 
-    // Add to notification center
-    addNotification({
-      title: "Novo pagamento",
-      message: `Pagamento registrado para o contrato #${id} em ${formattedDate}`,
-      type: "success",
-    })
+      toast({
+        title: "Pagamento registrado",
+        description: "O pagamento foi registrado com sucesso!",
+        variant: "success",
+      })
 
-    // Navigate back to contract details
-    router.push(`/contract-details/${id}`)
-
-    // In a real app, you would save this to your backend
+      router.push(`/contract-details/${idContrato}`)
+    } catch (err) {
+      console.error("Erro ao registrar pagamento:", err)
+      toast({
+        title: "Erro",
+        description: "Não foi possível registrar o pagamento.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
-    <PageLayout title={`Registrar Pagamento - Contrato ${id}`}>
+    <PageLayout title="Registrar Pagamento">
       <form onSubmit={handleSubmit}>
-        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-1">DATA DO PAGAMENTO</label>
-                <Input
-                  type="date"
-                  className="bg-gray-100"
-                  required
-                  value={paymentDate}
-                  onChange={(e) => setPaymentDate(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">VALOR</label>
-                <Input type="text" placeholder="R$ 0,00" className="bg-gray-100" required />
-              </div>
-
-              <div className="col-span-2">
-                <label className="block text-sm font-medium mb-1">OBSERVAÇÕES</label>
-                <Textarea
-                  className="bg-gray-100 min-h-[100px]"
-                  placeholder="Adicione informações relevantes sobre este pagamento. Estas observações serão visíveis no histórico de pagamentos."
-                />
-              </div>
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6 border space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">DATA DO PAGAMENTO</label>
+              <Input type="date" className="bg-gray-100" value={dataPag} onChange={(e) => setDataPag(e.target.value)} max={today} />
             </div>
 
-            <div className="flex justify-center mt-8">
-              <Button type="submit" size="icon" className="bg-black text-white rounded-full h-8 w-8">
-                <Check className="h-4 w-4" />
-              </Button>
+            <div>
+              <label className="block text-sm font-medium mb-1">COMPETÊNCIA</label>
+              <Select onValueChange={setIdComp}>
+                <SelectTrigger className="bg-gray-100">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent className="max-h-40 overflow-y-auto">
+                  {competencias.map((comp) => (
+                    <SelectItem key={comp.idComp} value={String(comp.idComp)}>
+                      {`${comp.mesPag}/${comp.anoPag}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium mb-1">VALOR PAGO</label>
+              <Input
+                type="text"
+                placeholder="R$ 0,00"
+                className="bg-gray-100"
+                value={valorPago}
+                onChange={(e) => setValorPago(e.target.value)}
+                step="0.01"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">OBSERVAÇÃO</label>
+            <textarea
+              className="bg-gray-100 border rounded-md w-full px-3 py-2 text-sm"
+              placeholder="Adicione informações sobre este pagamento. Estas observações podem ser visualizadas no histórico de pagamentos..."
+              rows={4}
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+            />
+          </div>
+
+          <div className="flex justify-center">
+            <Button type="submit" size="icon" className="bg-black text-white rounded-full h-8 w-8">
+              <Check className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </form>

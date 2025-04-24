@@ -23,8 +23,8 @@ export default function RegisterContract() {
   const { toast } = useToast()
   const { addNotification } = useNotifications()
 
-  // --- Estados de formulário ---
   const today = new Date().toISOString().split("T")[0]
+
   const [idEmp, setIdEmp] = useState("")
   const [idComp, setIdComp] = useState("")
   const [idStatus, setIdStatus] = useState("")
@@ -33,11 +33,8 @@ export default function RegisterContract() {
   const [dataUltPag, setDataUltPag] = useState(today)
   const [pdfFile, setPdfFile] = useState<File | null>(null)
 
-  // --- Listas vinda da API ---
   const [empresas, setEmpresas] = useState<{ idEmp: number; nomeEmp: string }[]>([])
-  const [competencias, setCompetencias] = useState<
-    { idComp: number; mesPag: string; anoPag: string }[]
-  >([])
+  const [competencias, setCompetencias] = useState<{ idComp: number; mesPag: string; anoPag: string }[]>([])
   const [statusList, setStatusList] = useState<{ idStatus: number; nomeStatus: string }[]>([])
 
   useEffect(() => {
@@ -46,23 +43,24 @@ export default function RegisterContract() {
     api.get("/status").then((res) => setStatusList(res.data))
   }, [])
 
-  // --- Validação simples de "valor" ---
   const isValorValid = (v: string) => /^\d+(\.\d{1,2})?$/.test(v)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 1) Campos obrigatórios
     if (!idEmp || !idComp || !idStatus || !dataVen || !valor || !dataUltPag) {
       return toast({ title: "Preencha todos os campos", variant: "destructive" })
     }
-    // 2) Valor numérico
+
     if (!isValorValid(valor)) {
-      return toast({ title: "Valor inválido", variant: "destructive" })
+      return toast({ title: "Valor inválido", description: "Informe um número válido com até duas casas decimais", variant: "destructive" })
+    }
+
+    if (pdfFile && (pdfFile.type !== "application/pdf" || pdfFile.size > 10 * 1024 * 1024)) {
+      return toast({ title: "Arquivo inválido", description: "Anexe apenas arquivos PDF de até 10MB", variant: "destructive" })
     }
 
     try {
-      // 3) Cria contrato
       const res = await api.post("/contratos", {
         idEmp,
         idStatus,
@@ -70,16 +68,15 @@ export default function RegisterContract() {
         dataVen,
         valor,
       })
+
       const contratoId = res.data.contratoId
 
-      // 4) Registra o pagamento inicial
       await api.post(`/pagamentos`, {
         idContrato: contratoId,
         idComp,
         dataPag: dataUltPag,
       })
 
-      // 5) Anexa PDF se houver
       if (pdfFile) {
         const form = new FormData()
         form.append("pdfContrato", pdfFile)
@@ -88,7 +85,6 @@ export default function RegisterContract() {
         })
       }
 
-      // 6) Sucesso geral
       toast({ title: "Contrato cadastrado com sucesso", variant: "success" })
       addNotification({
         title: "Novo contrato",
@@ -98,7 +94,7 @@ export default function RegisterContract() {
       router.push("/")
     } catch (err) {
       console.error(err)
-      toast({ title: "Erro ao cadastrar", variant: "destructive" })
+      toast({ title: "Erro ao cadastrar contrato", variant: "destructive" })
     }
   }
 
@@ -108,7 +104,6 @@ export default function RegisterContract() {
         <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
               {/* EMPRESA */}
               <div className="col-span-3">
                 <label className="block text-sm font-medium mb-1">EMPRESA</label>
@@ -128,11 +123,7 @@ export default function RegisterContract() {
                     </Select>
                   </div>
                   <Link href="/register-company">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="bg-black text-white h-8 w-8 p-0 rounded-full"
-                    >
+                    <Button variant="outline" size="icon" className="bg-black text-white h-8 w-8 p-0 rounded-full">
                       <Plus className="h-4 w-4" />
                     </Button>
                   </Link>
@@ -173,59 +164,50 @@ export default function RegisterContract() {
                 </Select>
               </div>
 
-              {/* DATA VENCIMENTO */}
+              {/* DATA VEN */}
               <div>
                 <label className="block text-sm font-medium mb-1">DATA VENCIMENTO</label>
-                <Input
-                  type="date"
-                  className="bg-gray-100"
-                  value={dataVen}
-                  onChange={(e) => setDataVen(e.target.value)}
-                />
+                <Input type="date" className="bg-gray-100" value={dataVen} onChange={(e) => setDataVen(e.target.value)} />
               </div>
 
               {/* VALOR */}
               <div>
                 <label className="block text-sm font-medium mb-1">VALOR</label>
-                <Input
-                  type="text"
-                  placeholder="0.00"
-                  className="bg-gray-100"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                />
+                <Input type="text" placeholder="R$ 0.00" className="bg-gray-100" value={valor} onChange={(e) => setValor(e.target.value)} />
               </div>
 
-              {/* ÚLTIMO PAGAMENTO + ANEXAR */}
+              {/* ÚLTIMO PAGAMENTO */}
               <div>
-                <label className="block text-sm font-medium mb-1">ÚLTIMO PAGAMENTO & ANEXO</label>
-                <div className="flex items-center gap-2">
-                  <label className="cursor-pointer bg-gray-100 p-2 rounded">
-                    <Paperclip className="h-5 w-5 text-gray-600" />
+                <label className="block text-sm font-medium mb-1">ÚLTIMO PAGAMENTO</label>
+                <Input type="date" className="bg-gray-100" value={dataUltPag} onChange={(e) => setDataUltPag(e.target.value)} />
+              </div>
+            </div>
+
+            {/* BOTÃO DE ANEXO */}
+            <div>
+              <label className="block text-sm font-medium mb-1">ANEXO:</label>
+              <div className="flex items-start gap-2">
+                <Button asChild variant="outline" size="sm" className="gap-1">
+                  <label className="cursor-pointer flex items-center gap-1">
+                    <Paperclip className="h-4 w-4" />
+                    Anexar PDF do Contrato
                     <input
                       type="file"
                       accept="application/pdf"
                       className="hidden"
-                      onChange={(e) => e.target.files && setPdfFile(e.target.files[0])}
+                      onChange={(e) => {
+                        if (e.target.files) setPdfFile(e.target.files[0])
+                      }}
                     />
                   </label>
-                  <Input
-                    type="date"
-                    className="bg-gray-100"
-                    value={dataUltPag}
-                    onChange={(e) => setDataUltPag(e.target.value)}
-                  />
-                </div>
+                </Button>
               </div>
+              <p className="text-xs text-gray-500 mt-1">Anexe o contrato em formato PDF (tamanho máximo: 10MB)</p>
             </div>
 
-            {/* BOTÃO DE SUBMIT */}
+            {/* SUBMIT */}
             <div className="flex justify-center mt-8">
-              <Button
-                type="submit"
-                size="icon"
-                className="bg-black text-white rounded-full h-8 w-8"
-              >
+              <Button type="submit" size="icon" className="bg-black text-white rounded-full h-8 w-8">
                 <Check className="h-4 w-4" />
               </Button>
             </div>

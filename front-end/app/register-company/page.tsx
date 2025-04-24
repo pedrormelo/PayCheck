@@ -1,165 +1,137 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Check, Trash } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Check, Trash2 } from "lucide-react"
 import PageLayout from "@/app/components/page-layout"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { useNotifications } from "@/hooks/use-notifications"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import api from "@/lib/api"
 
 export default function RegisterCompany() {
+  const [nomeEmp, setNomeEmp] = useState("")
+  const [empresas, setEmpresas] = useState<any[]>([])
+
   const router = useRouter()
   const { toast } = useToast()
   const { addNotification } = useNotifications()
-  const [companyToDelete, setCompanyToDelete] = useState<string | null>(null)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  // Sample data for existing companies
-  const [companies, setCompanies] = useState(["EMPRESA 1", "EMPRESA 2", "EMPRESA 3"])
-  const [newCompanyName, setNewCompanyName] = useState("")
+  const carregarEmpresas = () => {
+    api.get("/empresas").then((res) => {
+      setEmpresas(res.data)
+    })
+  }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    carregarEmpresas()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!newCompanyName.trim()) {
+    if (!nomeEmp.trim()) {
       toast({
-        title: "Erro",
-        description: "Por favor, digite o nome da empresa",
+        title: "Campo obrigatório",
+        description: "O nome da empresa é obrigatório.",
         variant: "destructive",
       })
       return
     }
 
-    // Add the new company to the list
-    setCompanies([...companies, newCompanyName.toUpperCase()])
-    setNewCompanyName("")
-
-    // Show toast notification
-    toast({
-      title: "Empresa cadastrada",
-      description: "A empresa foi cadastrada com sucesso",
-      variant: "success",
-    })
-
-    // Add to notification center
-    addNotification({
-      title: "Nova empresa",
-      message: `A empresa ${newCompanyName.toUpperCase()} foi cadastrada no sistema`,
-      type: "success",
-    })
-
-    // In a real app, you would save this to your backend
-  }
-
-  const confirmDeleteCompany = (company: string) => {
-    setCompanyToDelete(company)
-    setShowDeleteDialog(true)
-  }
-
-  const handleDeleteCompany = () => {
-    if (companyToDelete) {
-      // Remove company from list
-      setCompanies(companies.filter((company) => company !== companyToDelete))
-
-      // Show toast notification
+    try {
+      await api.post("/empresas", { nomeEmp })
       toast({
-        title: "Empresa excluída",
-        description: `A empresa ${companyToDelete} foi excluída com sucesso`,
+        title: "Empresa cadastrada",
+        description: "Empresa adicionada com sucesso.",
         variant: "success",
       })
 
-      // Add to notification center
       addNotification({
-        title: "Empresa excluída",
-        message: `A empresa ${companyToDelete} foi excluída do sistema`,
-        type: "warning",
+        title: "Nova empresa",
+        message: `Empresa "${nomeEmp}" foi cadastrada com sucesso.`,
+        type: "success",
       })
 
-      // Close the dialog and reset company to delete
-      setShowDeleteDialog(false)
-      setCompanyToDelete(null)
+      setNomeEmp("")
+      carregarEmpresas()
+      router.push("/register-contract")
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao cadastrar empresa.",
+        variant: "destructive",
+      })
+    }
+  }
 
-      // In a real app, you would delete this from your backend
+  const handleDelete = async (idEmp: number) => {
+    if (!confirm("Tem certeza que deseja excluir esta empresa?")) return
+
+    try {
+      await api.delete(`/empresas/${idEmp}`)
+      toast({
+        title: "Empresa excluída",
+        description: "Empresa removida com sucesso.",
+        variant: "default",
+      })
+      carregarEmpresas()
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: "Verifique se essa empresa está em uso em algum contrato.",
+        variant: "destructive",
+      })
     }
   }
 
   return (
     <PageLayout title="Cadastrar Empresa">
-      <form onSubmit={handleSubmit}>
-        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">NOME DA EMPRESA</label>
-              <Input
-                placeholder="Digite o nome da empresa"
-                className="bg-gray-100"
-                value={newCompanyName}
-                onChange={(e) => setNewCompanyName(e.target.value)}
-              />
-            </div>
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 bg-white border rounded-lg shadow-sm space-y-6">
+        <div>
+          <label className="block text-sm font-medium mb-1">NOME DA EMPRESA</label>
+          <Input
+            type="text"
+            placeholder="Digite o nome da empresa"
+            className="bg-gray-100"
+            value={nomeEmp}
+            onChange={(e) => setNomeEmp(e.target.value)}
+          />
+        </div>
 
-            <div>
-              <h2 className="text-lg font-medium mb-2">EMPRESAS</h2>
-              <div className="space-y-2 border rounded-md p-4 bg-gray-100">
-                {companies.map((company, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-200 rounded-md">
-                    <span>{company}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
-                      onClick={() => confirmDeleteCompany(company)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                {companies.length === 0 && (
-                  <div className="p-4 text-center text-sm text-gray-500">Nenhuma empresa cadastrada</div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-center mt-8">
-              <Button type="submit" size="icon" className="bg-black text-white rounded-full h-8 w-8">
-                <Check className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        <div className="flex justify-center">
+          <Button type="submit" size="icon" className="bg-black text-white rounded-full h-8 w-8">
+            <Check className="h-4 w-4" />
+          </Button>
         </div>
       </form>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir a empresa {companyToDelete}? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCompany} className="bg-red-600 hover:bg-red-700">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="max-w-2xl mx-auto mt-6">
+        <h3 className="text-sm font-semibold mb-2 text-gray-600">Empresas cadastradas</h3>
+        {empresas.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhuma empresa cadastrada.</p>
+        ) : (
+          <ul className="space-y-2">
+            {empresas.map((empresa) => (
+              <li
+                key={empresa.idEmp}
+                className="flex justify-between items-center bg-gray-100 px-4 py-2 rounded-md"
+              >
+                <span className="text-sm">{empresa.nomeEmp}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-red-600 hover:text-red-800"
+                  onClick={() => handleDelete(empresa.idEmp)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </PageLayout>
   )
 }
