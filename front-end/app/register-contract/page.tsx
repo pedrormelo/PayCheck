@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Check, Plus, Paperclip } from "lucide-react"
+import { Check, Plus, Paperclip, X } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import PageLayout from "@/app/components/page-layout"
@@ -45,6 +45,24 @@ export default function RegisterContract() {
 
   const isValorValid = (v: string) => /^\d+(\.\d{1,2})?$/.test(v)
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+
+    if (file) {
+      if (file.type !== "application/pdf") {
+        toast({ title: "Formato inválido", description: "Selecione um arquivo PDF.", variant: "destructive" })
+        return
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "Arquivo muito grande", description: "O limite é 10MB.", variant: "destructive" })
+        return
+      }
+
+      setPdfFile(file)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -53,11 +71,11 @@ export default function RegisterContract() {
     }
 
     if (!isValorValid(valor)) {
-      return toast({ title: "Valor inválido", description: "Informe um número válido com até duas casas decimais", variant: "destructive" })
-    }
-
-    if (pdfFile && (pdfFile.type !== "application/pdf" || pdfFile.size > 10 * 1024 * 1024)) {
-      return toast({ title: "Arquivo inválido", description: "Anexe apenas arquivos PDF de até 10MB", variant: "destructive" })
+      return toast({
+        title: "Valor inválido",
+        description: "Informe um número válido com até duas casas decimais",
+        variant: "destructive",
+      })
     }
 
     try {
@@ -73,7 +91,9 @@ export default function RegisterContract() {
 
       await api.post(`/pagamentos`, {
         idContrato: contratoId,
-        idComp,
+        idComp: Number(idComp),
+        valorPago: valor ? Number(valor) : 0,
+        observacao: null,
         dataPag: dataUltPag,
       })
 
@@ -164,7 +184,7 @@ export default function RegisterContract() {
                 </Select>
               </div>
 
-              {/* DATA VEN */}
+              {/* DATA VENCIMENTO */}
               <div>
                 <label className="block text-sm font-medium mb-1">DATA VENCIMENTO</label>
                 <Input type="date" className="bg-gray-100" value={dataVen} onChange={(e) => setDataVen(e.target.value)} />
@@ -173,7 +193,13 @@ export default function RegisterContract() {
               {/* VALOR */}
               <div>
                 <label className="block text-sm font-medium mb-1">VALOR</label>
-                <Input type="text" placeholder="R$ 0.00" className="bg-gray-100" value={valor} onChange={(e) => setValor(e.target.value)} />
+                <Input
+                  type="text"
+                  placeholder="R$ 0.00"
+                  className="bg-gray-100"
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                />
               </div>
 
               {/* ÚLTIMO PAGAMENTO */}
@@ -190,17 +216,24 @@ export default function RegisterContract() {
                 <Button asChild variant="outline" size="sm" className="gap-1">
                   <label className="cursor-pointer flex items-center gap-1">
                     <Paperclip className="h-4 w-4" />
-                    Anexar PDF do Contrato
+                    {pdfFile ? "Alterar PDF" : "Anexar PDF do Contrato"}
                     <input
                       type="file"
                       accept="application/pdf"
                       className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files) setPdfFile(e.target.files[0])
-                      }}
+                      onChange={handleFileChange}
                     />
                   </label>
                 </Button>
+
+                {pdfFile && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span>{pdfFile.name}</span>
+                    <button type="button" onClick={() => setPdfFile(null)} className="text-red-600 hover:text-red-800">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
               <p className="text-xs text-gray-500 mt-1">Anexe o contrato em formato PDF (tamanho máximo: 10MB)</p>
             </div>

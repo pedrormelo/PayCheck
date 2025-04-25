@@ -26,7 +26,7 @@ exports.criarContrato = (req, res) => {
         }
         res.status(201).json({ message: "Contrato criado com sucesso.", contratoId: result.insertId });
     });
-}   
+}
 
 exports.listarContratos = (req, res) => {
     const sql = `
@@ -89,10 +89,10 @@ exports.filtrarContrato = (req, res) => {
 }
 
 //atualizar contrato
-exports. atualizarContrato = (req, res) => {
+exports.atualizarContrato = (req, res) => {
     const { id } = req.params;
     const { idEmp, idStatus, idComp, dataVen, valor } = req.body;
-    
+
     if (!idEmp || !idStatus || !idComp || !dataVen || !valor) {
         return res.status(400).json({ error: "Todos os campos são obrigatórios." });
     }
@@ -170,26 +170,44 @@ exports.listarContratosAtrasados = (req, res) => {
 
 //Upload contratos em pdf
 exports.uploadContratoPDF = (req, res) => {
+    const { idContrato } = req.params;
+
     if (!req.file) {
-        return res.status(400).json({ error: "Nenhum arquivo enviado ou formato inválido." });    
+        return res.status(400).json({ error: "Nenhum arquivo enviado ou formato inválido." });
     }
 
-    const filePath = path.join(__dirname, "../../uploads", req.file.filename);
+    const pastaDestino = path.join(__dirname, "../../uploads");
 
-    res.status(201).json({
-        message: "PDF do contrato enviado com sucesso.",
-        filePath: filePath
+    // Cria a pasta se não existir
+    if (!fs.existsSync(pastaDestino)) {
+        fs.mkdirSync(pastaDestino, { recursive: true });
+    }
+
+    const nomeFinal = `contrato_${idContrato}.pdf`;
+    const caminhoFinal = path.join(pastaDestino, nomeFinal);
+
+    // Move e renomeia o arquivo
+    fs.rename(req.file.path, caminhoFinal, (err) => {
+        if (err) {
+            console.error("Erro ao mover/renomear o arquivo:", err);
+            return res.status(500).json({ error: "Erro ao salvar o arquivo PDF." });
+        }
+
+        res.status(201).json({
+            message: "PDF do contrato enviado com sucesso.",
+            filePath: caminhoFinal,
+        });
     });
 };
 
 //Download contratos em pdf
 exports.downloadContratoPDF = (req, res) => {
-    const filePath = path.join(__dirname, "../../uploads/contratos", `contrato_${req.params.idContrato}.pdf`);
+    const { idContrato } = req.params;
+    const filePath = path.join(__dirname, "../../uploads", `contrato_${idContrato}.pdf`);
 
     if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: "Arquivo não encontrado."});
-
+        return res.status(404).json({ error: "Arquivo não encontrado." });
     }
 
     res.download(filePath);
-}
+};
