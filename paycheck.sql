@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 11/04/2025 às 19:30
+-- Tempo de geração: 25/04/2025 às 14:49
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.2.12
 
@@ -332,7 +332,8 @@ INSERT INTO `contratos` (`idContrato`, `idEmp`, `idStatus`, `idComp`, `dataVen`,
 (12, 5, 4, 5, '2025-12-05', '2026-12-05', 10000.00),
 (13, 6, 1, 6, '2025-07-14', '2026-07-14', 9500.50),
 (14, 1, 2, 3, '2024-01-15', '2025-01-15', 15000.00),
-(15, 1, 2, 3, '2025-07-20', '2025-01-21', 15000.00);
+(15, 1, 2, 3, '2025-07-20', '2025-01-21', 15000.00),
+(16, 2, 3, 3, '2025-04-23', '2024-10-25', 10.00);
 
 -- --------------------------------------------------------
 
@@ -344,17 +345,21 @@ CREATE TABLE `contratos_competencia` (
   `idPagamento` int(11) NOT NULL,
   `dataPag` date NOT NULL,
   `idContrato` int(11) NOT NULL,
-  `idComp` int(11) NOT NULL
+  `idComp` int(11) NOT NULL,
+  `observacao` text DEFAULT NULL,
+  `valorPago` decimal(10,2) NOT NULL DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Despejando dados para a tabela `contratos_competencia`
 --
 
-INSERT INTO `contratos_competencia` (`idPagamento`, `dataPag`, `idContrato`, `idComp`) VALUES
-(1, '2025-03-20', 10, 3),
-(2, '2024-05-10', 12, 3),
-(3, '2025-03-20', 10, 3);
+INSERT INTO `contratos_competencia` (`idPagamento`, `dataPag`, `idContrato`, `idComp`, `observacao`, `valorPago`) VALUES
+(1, '2025-03-20', 10, 3, NULL, 0.00),
+(2, '2024-05-10', 12, 3, NULL, 0.00),
+(3, '2025-03-20', 10, 3, NULL, 0.00),
+(4, '2025-04-23', 16, 3, NULL, 0.00),
+(5, '2025-04-10', 7, 3, NULL, 0.00);
 
 -- --------------------------------------------------------
 
@@ -388,14 +393,14 @@ INSERT INTO `empresas` (`idEmp`, `nomeEmp`) VALUES
 
 CREATE TABLE `situacao` (
   `idStatus` int(11) NOT NULL,
-  `situacao` varchar(50) NOT NULL
+  `nomeStatus` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Despejando dados para a tabela `situacao`
 --
 
-INSERT INTO `situacao` (`idStatus`, `situacao`) VALUES
+INSERT INTO `situacao` (`idStatus`, `nomeStatus`) VALUES
 (1, 'PAGO'),
 (2, 'LIQUIDAÇÃO'),
 (3, 'EMPENHO'),
@@ -455,19 +460,19 @@ ALTER TABLE `competencia`
 -- AUTO_INCREMENT de tabela `contratos`
 --
 ALTER TABLE `contratos`
-  MODIFY `idContrato` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `idContrato` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de tabela `contratos_competencia`
 --
 ALTER TABLE `contratos_competencia`
-  MODIFY `idPagamento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `idPagamento` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT de tabela `empresas`
 --
 ALTER TABLE `empresas`
-  MODIFY `idEmp` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `idEmp` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de tabela `situacao`

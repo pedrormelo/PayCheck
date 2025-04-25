@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
@@ -13,9 +13,9 @@ import api from "@/lib/api"
 export default function PaymentRegister() {
   const router = useRouter()
   const { toast } = useToast()
-  const params = useSearchParams()
+  const params = useParams()
 
-  const idContrato = params.get("id") || ""
+  const idContrato = params.id || "";
 
   const [competencias, setCompetencias] = useState<any[]>([])
   const [idComp, setIdComp] = useState("")
@@ -34,21 +34,29 @@ export default function PaymentRegister() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!idComp || !dataPag || !valorPago) {
+    if (!idComp || !dataPag || !valorPago || isNaN(Number(valorPago))) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios com valores válidos",
         variant: "destructive",
       })
       return
     }
 
     try {
-      await api.post(`/pagamentos/${idContrato}`, {
+      console.log({
         idContrato: Number(idContrato),
         idComp: Number(idComp),
         dataPag,
-        valorPago,
+        valorPago: Number(valorPago),
+        observacao,
+      });
+
+      await api.post(`/pagamentos/`, {
+        idContrato: Number(idContrato),
+        idComp: Number(idComp),
+        dataPag,
+        valorPago: Number(valorPago), // Ensure valorPago is sent as a number
         observacao,
       })
 
@@ -99,7 +107,7 @@ export default function PaymentRegister() {
               <label className="block text-sm font-medium mb-1">VALOR PAGO</label>
               <Input
                 type="text"
-                placeholder="R$ 0,00"
+                placeholder="R$ 0.00"
                 className="bg-gray-100"
                 value={valorPago}
                 onChange={(e) => setValorPago(e.target.value)}

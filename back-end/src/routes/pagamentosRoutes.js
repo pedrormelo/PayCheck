@@ -8,5 +8,7 @@ router.get("/:idContrato/atraso", pagamentosController.calcularAtraso);
 router.get("/:idContrato/ultimo", pagamentosController.ultimoPagamento);
 router.post("/:idContrato/registrar", pagamentosController.registrarUltimoPagamento);
 router.get("/:idContrato/historico", pagamentosController.historicoPagamentos);
+router.delete("/:idPagamento", pagamentosController.deletarPagamento);
+
 
 module.exports = router;
