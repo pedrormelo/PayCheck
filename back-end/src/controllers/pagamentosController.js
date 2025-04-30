@@ -41,7 +41,6 @@ exports.listarPagamentos = (req, res) => {
 };
 
 exports.calcularAtraso = (req, res) => {
-    console.log("🔍 Rota /atraso foi acessada com query:", req.query);
     const { idContrato } = req.params;
 
     const sql = `

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, Download, Paperclip, Check, Plus, X } from "lucide-react"
+import { Trash2, Download, Paperclip, Check, X } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import PageLayout from "@/app/components/page-layout"
@@ -45,23 +45,49 @@ export default function EditContract() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   useEffect(() => {
-    api.get("/empresas").then((res) => setEmpresas(res.data))
-    api.get("/competencia").then((res) => setCompetencias(res.data))
-    api.get("/status").then((res) => setStatusList(res.data))
+    const fetchContractData = async () => {
+      try {
+        const [empresasRes, competenciasRes, statusRes, contratoRes, historicoRes] = await Promise.all([
+          api.get("/empresas"),
+          api.get("/competencia"),
+          api.get("/status"),
+          api.get(`/contratos/${id}`),
+          api.get(`/pagamentos/${id}/historico`),
+        ])
 
-    api.get(`/contratos/${id}`).then((res) => {
-      const contrato = res.data
-      if (contrato) {
-        setIdEmp(contrato.idEmp.toString())
-        setIdComp(contrato.idComp.toString())
-        setIdStatus(contrato.idStatus.toString())
-        setDataVen(contrato.dataVen.split("T")[0])
-        setValor(contrato.valor.toString())
-        setDataUltPag(contrato.dataUltPag?.split("T")[0] || "")
-        setAnexoAtual(`contrato_${contrato.idContrato}.pdf`)
+        setEmpresas(empresasRes.data)
+        setCompetencias(competenciasRes.data)
+        setStatusList(statusRes.data)
+
+        const contrato = contratoRes.data
+        if (contrato) {
+          setIdEmp(contrato.idEmp.toString())
+          setIdComp(contrato.idComp.toString())
+          setIdStatus(contrato.idStatus.toString())
+          setDataVen(contrato.dataVen.split("T")[0])
+          setValor(contrato.valor.toString())
+          setAnexoAtual(`contrato_${contrato.idContrato}.pdf`)
+        }
+
+        const dataUlt = historicoRes.data.ultimoPagamento
+        if (dataUlt) {
+          const dataFormatada = new Date(dataUlt).toISOString().split("T")[0]
+          setDataUltPag(dataFormatada)
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados do contrato:", err)
       }
-    })
+    }
+
+    if (id) fetchContractData()
   }, [id])
+
+  const getEmpresaNome = () => empresas.find(e => e.idEmp.toString() === idEmp)?.nomeEmp
+  const getCompetenciaTexto = () => {
+    const comp = competencias.find(c => c.idComp.toString() === idComp)
+    return comp ? `${comp.mesPag}/${comp.anoPag}` : null
+  }
+  const getStatusNome = () => statusList.find(s => s.idStatus.toString() === idStatus)?.nomeStatus
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -137,71 +163,77 @@ export default function EditContract() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* EMPRESA */}
               <div>
-                <label className="block text-sm font-medium mb-1">EMPRESA</label>
-                <Select value={idEmp} onValueChange={setIdEmp}>
-                  <SelectTrigger className="bg-gray-100">
-                    <SelectValue placeholder="Selecione a empresa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {empresas.map((e) => (
-                      <SelectItem key={e.idEmp} value={e.idEmp.toString()}>
-                        {e.nomeEmp}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label htmlFor="empresa" className="block text-sm font-medium mb-1">EMPRESA</label>
+                {empresas.length > 0 && idEmp && (
+                  <Select value={idEmp} onValueChange={setIdEmp}>
+                    <SelectTrigger id="empresa" className="bg-gray-100">
+                      <SelectValue placeholder="Selecione a empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empresas.map((e) => (
+                        <SelectItem key={e.idEmp} value={e.idEmp.toString()}>
+                          {e.nomeEmp}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {/* COMPETÊNCIA */}
               <div>
-                <label className="block text-sm font-medium mb-1">COMPETÊNCIA</label>
-                <Select value={idComp} onValueChange={setIdComp}>
-                  <SelectTrigger className="bg-gray-100">
-                    <SelectValue placeholder="Selecione a competência" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {competencias.map((c) => (
-                      <SelectItem key={c.idComp} value={c.idComp.toString()}>
-                        {`${c.mesPag}/${c.anoPag}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label htmlFor="competencia" className="block text-sm font-medium mb-1">COMPETÊNCIA</label>
+                {competencias.length > 0 && idComp && (
+                  <Select value={idComp} onValueChange={setIdComp}>
+                    <SelectTrigger id="competencia" className="bg-gray-100">
+                      <SelectValue placeholder="Selecione a competência" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {competencias.map((c) => (
+                        <SelectItem key={c.idComp} value={c.idComp.toString()}>
+                          {`${c.mesPag}/${c.anoPag}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {/* SITUAÇÃO */}
               <div>
-                <label className="block text-sm font-medium mb-1">SITUAÇÃO</label>
-                <Select value={idStatus} onValueChange={setIdStatus}>
-                  <SelectTrigger className="bg-gray-100">
-                    <SelectValue placeholder="Selecione a situação" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusList.map((s) => (
-                      <SelectItem key={s.idStatus} value={s.idStatus.toString()}>
-                        {s.nomeStatus}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label htmlFor="situacao" className="block text-sm font-medium mb-1">SITUAÇÃO</label>
+                {statusList.length > 0 && idStatus && (
+                  <Select value={idStatus} onValueChange={setIdStatus}>
+                    <SelectTrigger id="situacao" className="bg-gray-100">
+                      <SelectValue placeholder="Selecione a situação" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusList.map((s) => (
+                        <SelectItem key={s.idStatus} value={s.idStatus.toString()}>
+                          {s.nomeStatus}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
-              {/* DATA VEN */}
+              {/* DATA VENCIMENTO */}
               <div>
-                <label className="block text-sm font-medium mb-1">DATA VENCIMENTO</label>
-                <Input type="date" className="bg-gray-100" value={dataVen} onChange={(e) => setDataVen(e.target.value)} />
+                <label htmlFor="dataVen" className="block text-sm font-medium mb-1">DATA VENCIMENTO</label>
+                <Input id="dataVen" type="date" className="bg-gray-100" value={dataVen} onChange={(e) => setDataVen(e.target.value)} />
               </div>
 
               {/* VALOR */}
               <div>
-                <label className="block text-sm font-medium mb-1">VALOR</label>
-                <Input type="text" className="bg-gray-100" value={valor} onChange={(e) => setValor(e.target.value)} />
+                <label htmlFor="valor" className="block text-sm font-medium mb-1">VALOR</label>
+                <Input id="valor" type="text" className="bg-gray-100" value={valor} onChange={(e) => setValor(e.target.value)} />
               </div>
 
               {/* ÚLTIMO PAGAMENTO */}
               <div>
-                <label className="block text-sm font-medium mb-1">ÚLTIMO PAGAMENTO</label>
-                <Input type="date" className="bg-gray-100" value={dataUltPag} onChange={(e) => setDataUltPag(e.target.value)} />
+                <label htmlFor="dataUltPag" className="block text-sm font-medium mb-1">ÚLTIMO PAGAMENTO</label>
+                <Input id="dataUltPag" type="date" className="bg-gray-100" value={dataUltPag} onChange={(e) => setDataUltPag(e.target.value)} />
               </div>
             </div>
 
@@ -210,12 +242,7 @@ export default function EditContract() {
               <label className="block text-sm font-medium mb-1">ANEXO:</label>
               <div className="flex items-center gap-2 mt-2">
                 {anexoAtual && <span className="text-sm">{anexoAtual}</span>}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => window.open(`${api.defaults.baseURL}/contratos/${id}/download`, "_blank")}
-                >
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => window.open(`${api.defaults.baseURL}/contratos/${id}/download`, "_blank")}>
                   <Download className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setAnexoAtual(null)}>
@@ -243,13 +270,7 @@ export default function EditContract() {
 
             {/* AÇÕES */}
             <div className="flex justify-center gap-4 mt-8">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="bg-black text-white"
-                onClick={() => setShowDeleteDialog(true)}
-              >
+              <Button type="button" variant="outline" size="icon" className="bg-black text-white" onClick={() => setShowDeleteDialog(true)}>
                 <Trash2 className="h-4 w-4" />
               </Button>
               <Button type="submit" size="icon" className="bg-black text-white">
@@ -260,7 +281,7 @@ export default function EditContract() {
         </div>
       </form>
 
-      {/* CONFIRMAÇÃO DE EXCLUSÃO */}
+      {/* DIALOG DE EXCLUSÃO */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
