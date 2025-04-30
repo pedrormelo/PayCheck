@@ -9,6 +9,7 @@ const empresasRoutes = require("./routes/empresasRoutes");
 const pagamentosRoutes = require("./routes/pagamentosRoutes");
 const competenciaRoutes = require("./routes/competenciaRoutes");
 const statusRoutes = require("./routes/statusRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 
 const app = express();
@@ -27,6 +28,8 @@ app.use("/empresas", empresasRoutes);
 app.use("/pagamentos", pagamentosRoutes);
 app.use("/competencia", competenciaRoutes);
 app.use("/status", statusRoutes);
+app.use("/dashboard", dashboardRoutes);
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
