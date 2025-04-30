@@ -151,14 +151,27 @@ exports.atualizarContrato = (req, res) => {
 //excluir contrato
 exports.deletarContrato = (req, res) => {
     const { id } = req.params;
-    db.query(`DELETE FROM contratos WHERE idContrato = ?`, [id], (err, result) => {
-        if (err) {
-            return res.status(500).json({ error: "Erro ao deletar contrato." });
-        }
-        res.json({ message: "Contrato deletado com sucesso." });
-    });
 
+    const excluirPagamentos = `DELETE FROM contratos_competencia WHERE idContrato = ?`;
+    const excluirContrato = `DELETE FROM contratos WHERE idContrato = ?`;
+
+    db.query(excluirPagamentos, [id], (err) => {
+        if (err) {
+            console.error("Erro ao excluir pagamentos do contrato:", err);
+            return res.status(500).json({ error: "Erro ao excluir pagamentos." });
+        }
+
+        db.query(excluirContrato, [id], (err) => {
+            if (err) {
+                console.error("Erro ao deletar contrato:", err);
+                return res.status(500).json({ error: "Erro ao deletar contrato." });
+            }
+
+            res.json({ message: "Contrato e pagamentos deletados com sucesso." });
+        });
+    });
 };
+
 
 //atualizar status do contrato
 exports.atualizarStatus = (req, res) => {
