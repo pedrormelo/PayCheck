@@ -41,54 +41,31 @@ exports.listarPagamentos = (req, res) => {
 };
 
 exports.calcularAtraso = (req, res) => {
+    console.log("🔍 Rota /atraso foi acessada com query:", req.query);
     const { idContrato } = req.params;
 
     const sql = `
-        SELECT competencia.mesPag, competencia.anoPag, MAX(contratos_competencia.dataPag) as ultimoPagamento
+        SELECT MAX(dataPag) as ultimoPagamento
         FROM contratos_competencia
-        INNER JOIN competencia ON contratos_competencia.idComp = competencia.idComp
-        WHERE contratos_competencia.idContrato = ?
-        GROUP BY competencia.mesPag, competencia.anoPag
+        WHERE idContrato = ?
     `;
 
     db.query(sql, [idContrato], (err, results) => {
         if (err) {
             console.error("Erro ao calcular atraso:", err);
             return res.status(500).json({ error: "Erro ao calcular atraso." });
-
         }
 
-        if (results.length === 0) {
-            return res.json({ atraso: "Nenhum pagamento registrado." });
+        if (results.length === 0 || !results[0].ultimoPagamento) {
+            return res.json({ mesesAtraso: 0 }); // No payments, no delay
         }
 
-        const { mesPag, anoPag, ultimoPagamento } = results[0];
-
-        const monthMapping = {
-            "Janeiro": "01", "Fevereiro": "02", "Março": "03", "Abril": "04",
-            "Maio": "05", "Junho": "06", "Julho": "07", "Agosto": "08",
-            "Setembro": "09", "Outubro": "10", "Novembro": "11", "Dezembro": "12"
-        };
-
-        const mesNumero = monthMapping[mesPag];
-
-        if (!mesNumero) {
-            return res.status(400).json({ error: "Mês de competência inválido." });
-        }
-
-        const dataCompetencia = moment(`${anoPag}-${monthMapping[mesPag]}-01`, "YYYY-MM-DD");
-        const dataUltimoPagamento = moment(ultimoPagamento);
+        const ultimoPagamento = moment(results[0].ultimoPagamento);
         const dataAtual = moment();
 
-        let mesesAtraso = 0;
+        const mesesAtraso = dataAtual.diff(ultimoPagamento, "months");
 
-        if (ultimoPagamento) {
-            mesesAtraso = dataCompetencia.diff(dataUltimoPagamento, "months");
-        } else {
-            mesesAtraso = dataCompetencia.diff(dataAtual, "months");
-        }
-
-        res.json({ mesesAtraso: Math.abs(mesesAtraso) });
+        res.json({ mesesAtraso: Math.max(0, mesesAtraso) });
     });
 };
 
@@ -199,5 +176,63 @@ exports.deletarPagamento = (req, res) => {
     db.query("DELETE FROM contratos_competencia WHERE idPagamento = ?", [idPagamento], (err, result) => {
         if (err) return res.status(500).json({ error: "Erro ao excluir pagamento." });
         res.json({ message: "Pagamento excluído com sucesso." });
+    });
+};
+
+//listar contratos atrasados
+exports.listarContratosAtrasados = (req, res) => {
+    console.log("🔍 Rota /atrasados foi acessada com query:", req.query);
+    console.log("🔍 Parâmetros recebidos:", req.query);
+
+    const sql = `
+        SELECT contratos.*, empresas.nomeEmp, competencia.mesPag, competencia.anoPag,
+        TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(competencia.anoPag, '-', competencia.mesPag, '-01'), '%Y-%m-%d'), CURDATE()) AS mesesAtraso
+        FROM contratos
+        INNER JOIN empresas ON contratos.idEmp = empresas.idEmp
+        INNER JOIN competencia ON contratos.idComp = competencia.idComp
+        WHERE TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(competencia.anoPag, '-', competencia.mesPag, '-01'), '%Y-%m-%d'), CURDATE()) > 0
+    `;
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error("❌ Erro ao listar contratos atrasados:", err);
+            return res.status(500).json({ error: "Erro ao listar contratos atrasados." });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ error: "Contrato não encontrado." });
+        }
+        res.json(results);
+    });
+
+};//listar contratos atrasados
+exports.listarContratosAtrasados = (req, res) => {
+    const sql = `
+        SELECT 
+            contratos.idContrato, 
+            contratos.dataVen, 
+            contratos.valor, 
+            empresas.nomeEmp, 
+            competencia.mesPag, 
+            competencia.anoPag,
+            TIMESTAMPDIFF(MONTH, MAX(contratos_competencia.dataPag), CURDATE()) AS mesesAtraso
+        FROM contratos
+        LEFT JOIN contratos_competencia ON contratos.idContrato = contratos_competencia.idContrato
+        LEFT JOIN empresas ON contratos.idEmp = empresas.idEmp
+        LEFT JOIN competencia ON contratos.idComp = competencia.idComp
+        GROUP BY contratos.idContrato
+        HAVING mesesAtraso > 0
+    `;
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error("❌ Erro ao listar contratos atrasados:", err);
+            return res.status(500).json({ error: "Erro ao listar contratos atrasados." });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: "Nenhum contrato atrasado encontrado." });
+        }
+
+        res.json(results);
     });
 };

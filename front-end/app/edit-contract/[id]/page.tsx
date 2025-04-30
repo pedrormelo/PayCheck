@@ -1,16 +1,16 @@
 "use client"
 
-import type React from "react"
-
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, Download, Paperclip, Check, Plus } from "lucide-react"
+import { Trash2, Download, Paperclip, Check, Plus, X } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import PageLayout from "@/app/components/page-layout"
 import { useToast } from "@/hooks/use-toast"
 import { useNotifications } from "@/hooks/use-notifications"
+import api from "@/lib/api"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useState } from "react"
 
 export default function EditContract() {
   const params = useParams()
@@ -29,65 +28,105 @@ export default function EditContract() {
   const router = useRouter()
   const { toast } = useToast()
   const { addNotification } = useNotifications()
+
+  const [idEmp, setIdEmp] = useState("")
+  const [idComp, setIdComp] = useState("")
+  const [idStatus, setIdStatus] = useState("")
+  const [dataVen, setDataVen] = useState("")
+  const [valor, setValor] = useState("")
+  const [dataUltPag, setDataUltPag] = useState("")
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
+
+  const [empresas, setEmpresas] = useState<{ idEmp: number; nomeEmp: string }[]>([])
+  const [competencias, setCompetencias] = useState<{ idComp: number; mesPag: string; anoPag: string }[]>([])
+  const [statusList, setStatusList] = useState<{ idStatus: number; nomeStatus: string }[]>([])
+
+  const [anexoAtual, setAnexoAtual] = useState<string | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  // In a real app, you would fetch the contract data based on the ID
-  const contractData = {
-    id: id,
-    empresa: "Empresa A",
-    competencia: "Janeiro 2025",
-    situacao: "Ativo",
-    dataVen: "2025-01-15",
-    valor: "5000.00",
-    anexo: "contrato.pdf",
-    ultimoPagamento: "2025-01-05", // Added last payment date
+  useEffect(() => {
+    api.get("/empresas").then((res) => setEmpresas(res.data))
+    api.get("/competencia").then((res) => setCompetencias(res.data))
+    api.get("/status").then((res) => setStatusList(res.data))
+
+    api.get(`/contratos/${id}`).then((res) => {
+      const contrato = res.data
+      if (contrato) {
+        setIdEmp(contrato.idEmp.toString())
+        setIdComp(contrato.idComp.toString())
+        setIdStatus(contrato.idStatus.toString())
+        setDataVen(contrato.dataVen.split("T")[0])
+        setValor(contrato.valor.toString())
+        setDataUltPag(contrato.dataUltPag?.split("T")[0] || "")
+        setAnexoAtual(`contrato_${contrato.idContrato}.pdf`)
+      }
+    })
+  }, [id])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type !== "application/pdf") {
+        toast({ title: "Formato inválido", description: "Selecione um arquivo PDF.", variant: "destructive" })
+        return
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({ title: "Arquivo muito grande", description: "O limite é 10MB.", variant: "destructive" })
+        return
+      }
+      setPdfFile(file)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Show toast notification
-    toast({
-      title: "Contrato atualizado",
-      description: `O contrato #${id} foi atualizado com sucesso`,
-      variant: "success",
-    })
+    if (!idEmp || !idStatus || !idComp || !dataVen || !valor) {
+      return toast({ title: "Preencha todos os campos", variant: "destructive" })
+    }
 
-    // Add to notification center
-    addNotification({
-      title: "Contrato atualizado",
-      message: `Contrato #${id} foi atualizado`,
-      type: "info",
-    })
+    try {
+      await api.put(`/contratos/${id}`, {
+        idEmp,
+        idStatus,
+        idComp,
+        dataVen,
+        valor,
+      })
 
-    // Navigate back to contract details
-    router.push(`/contract-details/${id}`)
+      await api.post(`/pagamentos`, {
+        idContrato: Number(id),
+        idComp: Number(idComp),
+        valorPago: valor ? Number(valor) : 0,
+        observacao: null,
+        dataPag: dataUltPag,
+      })
 
-    // In a real app, you would save this to your backend
+      if (pdfFile) {
+        const form = new FormData()
+        form.append("pdfContrato", pdfFile)
+        await api.post(`/contratos/${id}/upload`, form)
+      }
+
+      toast({ title: "Contrato atualizado com sucesso", variant: "success" })
+      addNotification({ title: "Contrato atualizado", message: `Contrato #${id} foi atualizado`, type: "info" })
+      router.push(`/contract-details/${id}`)
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro ao atualizar contrato", variant: "destructive" })
+    }
   }
 
-  const handleDeleteContract = () => {
-    // Close the dialog
+  const handleDeleteContract = async () => {
     setShowDeleteDialog(false)
-
-    // Show toast notification
-    toast({
-      title: "Contrato excluído",
-      description: `O contrato #${id} foi excluído com sucesso`,
-      variant: "success",
-    })
-
-    // Add to notification center
-    addNotification({
-      title: "Contrato excluído",
-      message: `Contrato #${id} foi excluído permanentemente`,
-      type: "warning",
-    })
-
-    // Navigate back to home page
-    router.push("/")
-
-    // In a real app, you would delete this from your backend
+    try {
+      await api.delete(`/contratos/${id}`)
+      toast({ title: "Contrato excluído", description: `Contrato #${id} foi excluído.`, variant: "success" })
+      router.push("/")
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro ao excluir contrato", variant: "destructive" })
+    }
   }
 
   return (
@@ -96,92 +135,113 @@ export default function EditContract() {
         <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* EMPRESA */}
               <div>
                 <label className="block text-sm font-medium mb-1">EMPRESA</label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-grow">
-                    <Select defaultValue={contractData.empresa}>
-                      <SelectTrigger className="bg-gray-100">
-                        <SelectValue placeholder="Selecione a empresa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Empresa A">Empresa A</SelectItem>
-                        <SelectItem value="Empresa B">Empresa B</SelectItem>
-                        <SelectItem value="Empresa C">Empresa C</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Link href="/register-company">
-                    <Button variant="outline" size="icon" className="bg-black text-white h-8 w-8 p-0 rounded-full">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
+                <Select value={idEmp} onValueChange={setIdEmp}>
+                  <SelectTrigger className="bg-gray-100">
+                    <SelectValue placeholder="Selecione a empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {empresas.map((e) => (
+                      <SelectItem key={e.idEmp} value={e.idEmp.toString()}>
+                        {e.nomeEmp}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
+              {/* COMPETÊNCIA */}
               <div>
                 <label className="block text-sm font-medium mb-1">COMPETÊNCIA</label>
-                <Select defaultValue={contractData.competencia}>
+                <Select value={idComp} onValueChange={setIdComp}>
                   <SelectTrigger className="bg-gray-100">
                     <SelectValue placeholder="Selecione a competência" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Janeiro 2025">Janeiro 2025</SelectItem>
-                    <SelectItem value="Fevereiro 2025">Fevereiro 2025</SelectItem>
-                    <SelectItem value="Março 2025">Março 2025</SelectItem>
+                    {competencias.map((c) => (
+                      <SelectItem key={c.idComp} value={c.idComp.toString()}>
+                        {`${c.mesPag}/${c.anoPag}`}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* SITUAÇÃO */}
               <div>
                 <label className="block text-sm font-medium mb-1">SITUAÇÃO</label>
-                <Select defaultValue={contractData.situacao}>
+                <Select value={idStatus} onValueChange={setIdStatus}>
                   <SelectTrigger className="bg-gray-100">
                     <SelectValue placeholder="Selecione a situação" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Ativo">Ativo</SelectItem>
-                    <SelectItem value="Pendente">Pendente</SelectItem>
-                    <SelectItem value="Cancelado">Cancelado</SelectItem>
+                    {statusList.map((s) => (
+                      <SelectItem key={s.idStatus} value={s.idStatus.toString()}>
+                        {s.nomeStatus}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* DATA VEN */}
               <div>
-                <label className="block text-sm font-medium mb-1">DATA VEN:</label>
-                <Input type="date" defaultValue={contractData.dataVen} className="bg-gray-100" />
+                <label className="block text-sm font-medium mb-1">DATA VENCIMENTO</label>
+                <Input type="date" className="bg-gray-100" value={dataVen} onChange={(e) => setDataVen(e.target.value)} />
               </div>
 
+              {/* VALOR */}
               <div>
-                <label className="block text-sm font-medium mb-1">VALOR:</label>
-                <Input type="text" defaultValue={contractData.valor} className="bg-gray-100" />
+                <label className="block text-sm font-medium mb-1">VALOR</label>
+                <Input type="text" className="bg-gray-100" value={valor} onChange={(e) => setValor(e.target.value)} />
               </div>
 
+              {/* ÚLTIMO PAGAMENTO */}
               <div>
-                <label className="block text-sm font-medium mb-1">ÚLTIMO PAGAMENTO:</label>
-                <Input type="date" defaultValue={contractData.ultimoPagamento} className="bg-gray-100" />
+                <label className="block text-sm font-medium mb-1">ÚLTIMO PAGAMENTO</label>
+                <Input type="date" className="bg-gray-100" value={dataUltPag} onChange={(e) => setDataUltPag(e.target.value)} />
               </div>
             </div>
 
+            {/* ANEXO */}
             <div>
               <label className="block text-sm font-medium mb-1">ANEXO:</label>
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-sm">{contractData.anexo}</span>
-                <Button variant="outline" size="icon" className="h-8 w-8">
+                {anexoAtual && <span className="text-sm">{anexoAtual}</span>}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => window.open(`${api.defaults.baseURL}/contratos/${id}/download`, "_blank")}
+                >
                   <Download className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="h-8 w-8">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setAnexoAtual(null)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
               <div className="mt-2">
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Paperclip className="h-4 w-4" />
-                  Anexar arquivo
+                <Button asChild variant="outline" size="sm" className="gap-1">
+                  <label className="cursor-pointer flex items-center gap-1">
+                    <Paperclip className="h-4 w-4" />
+                    {pdfFile ? "Alterar PDF" : "Anexar PDF do Contrato"}
+                    <input type="file" accept="application/pdf" className="hidden" onChange={handleFileChange} />
+                  </label>
                 </Button>
+                {pdfFile && (
+                  <div className="flex items-center gap-2 mt-1 text-sm">
+                    <span>{pdfFile.name}</span>
+                    <button type="button" onClick={() => setPdfFile(null)} className="text-red-600 hover:text-red-800">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* AÇÕES */}
             <div className="flex justify-center gap-4 mt-8">
               <Button
                 type="button"
@@ -200,7 +260,7 @@ export default function EditContract() {
         </div>
       </form>
 
-      {/* Delete Confirmation Dialog */}
+      {/* CONFIRMAÇÃO DE EXCLUSÃO */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

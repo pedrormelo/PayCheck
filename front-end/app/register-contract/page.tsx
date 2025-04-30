@@ -98,12 +98,12 @@ export default function RegisterContract() {
       })
 
       if (pdfFile) {
+        console.log(contratoId)
         const form = new FormData()
         form.append("pdfContrato", pdfFile)
-        await api.post(`/contratos/${contratoId}/upload`, form, {
-          headers: { "Content-Type": "multipart/form-data" },
-        })
-      }
+      
+        await api.post(`/contratos/${contratoId}/upload`, form)
+      }      
 
       toast({ title: "Contrato cadastrado com sucesso", variant: "success" })
       addNotification({
@@ -111,6 +111,7 @@ export default function RegisterContract() {
         message: `Contrato #${contratoId} criado.`,
         type: "success",
       })
+      
       router.push("/")
     } catch (err) {
       console.error(err)

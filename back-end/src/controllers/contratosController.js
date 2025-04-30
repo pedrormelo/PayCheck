@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const moment = require("moment");
 const path = require("path");
+const multer = require("multer");
 const fs = require("fs");
 
 //adicionar contrato
@@ -48,6 +49,37 @@ exports.listarContratos = (req, res) => {
             return res.status(500).json({ error: "Erro ao listar contratos." });
         }
         res.json(results);
+    });
+}
+
+exports.listarContratoPorId = (req, res) => {
+    const { id } = req.params;
+
+    const sql = `
+        SELECT
+            contratos.idContrato, contratos.idEmp, contratos.idStatus, contratos.idComp,
+            contratos.dataVen, contratos.dataRen, contratos.valor,
+            empresas.nomeEmp,
+            situacao.nomeStatus,
+            CONCAT(competencia.mesPag, '/', competencia.anoPag) AS competencia
+        FROM contratos
+        LEFT JOIN empresas ON contratos.idEmp = empresas.idEmp
+        LEFT JOIN situacao ON contratos.idStatus = situacao.idStatus
+        LEFT JOIN competencia ON contratos.idComp = competencia.idComp
+        WHERE contratos.idContrato = ?
+    `;
+
+    db.query(sql, [id], (err, results) => {
+        if (err) {
+            console.error("Erro ao buscar contrato por ID:", err);
+            return res.status(500).json({ error: "Erro ao buscar contrato." });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: "Contrato não encontrado." });
+        }
+
+        res.json(results[0]); // Return the first result (since IDs are unique)
     });
 }
 
@@ -142,32 +174,6 @@ exports.atualizarStatus = (req, res) => {
     });
 };
 
-//listar contratos atrasados
-exports.listarContratosAtrasados = (req, res) => {
-    console.log("🔍 Rota /atrasados foi acessada com query:", req.query);
-    console.log("🔍 Parâmetros recebidos:", req.query);
-
-    const sql = `
-        SELECT contratos.*, empresas.nomeEmp, competencia.mesPag, competencia.anoPag,
-        TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(competencia.anoPag, '-', competencia.mesPag, '-01'), '%Y-%m-%d'), CURDATE()) AS mesesAtraso
-        FROM contratos
-        INNER JOIN empresas ON contratos.idEmp = empresas.idEmp
-        INNER JOIN competencia ON contratos.idComp = competencia.idComp
-        WHERE TIMESTAMPDIFF(MONTH, STR_TO_DATE(CONCAT(competencia.anoPag, '-', competencia.mesPag, '-01'), '%Y-%m-%d'), CURDATE()) > 0
-    `;
-
-    db.query(sql, (err, results) => {
-        if (err) {
-            console.error("❌ Erro ao listar contratos atrasados:", err);
-            return res.status(500).json({ error: "Erro ao listar contratos atrasados." });
-        }
-        if (results.length === 0) {
-            return res.status(404).json({ error: "Contrato não encontrado." });
-        }
-        res.json(results);
-    });
-};
-
 //Upload contratos em pdf
 exports.uploadContratoPDF = (req, res) => {
     const { idContrato } = req.params;
@@ -178,7 +184,7 @@ exports.uploadContratoPDF = (req, res) => {
 
     const pastaDestino = path.join(__dirname, "../../uploads");
 
-    // Cria a pasta se não existir
+    // Garante que a pasta existe
     if (!fs.existsSync(pastaDestino)) {
         fs.mkdirSync(pastaDestino, { recursive: true });
     }
@@ -186,12 +192,16 @@ exports.uploadContratoPDF = (req, res) => {
     const nomeFinal = `contrato_${idContrato}.pdf`;
     const caminhoFinal = path.join(pastaDestino, nomeFinal);
 
-    // Move e renomeia o arquivo
-    fs.rename(req.file.path, caminhoFinal, (err) => {
+    // Move com segurança: copia e deleta o original
+    fs.copyFile(req.file.path, caminhoFinal, (err) => {
         if (err) {
-            console.error("Erro ao mover/renomear o arquivo:", err);
-            return res.status(500).json({ error: "Erro ao salvar o arquivo PDF." });
+            console.error("Erro ao copiar o arquivo:", err);
+            return res.status(500).json({ error: "Erro ao salvar o PDF." });
         }
+
+        fs.unlink(req.file.path, () => {
+            // Ignora erro ao excluir o temporário
+        });
 
         res.status(201).json({
             message: "PDF do contrato enviado com sucesso.",
@@ -199,6 +209,7 @@ exports.uploadContratoPDF = (req, res) => {
         });
     });
 };
+
 
 //Download contratos em pdf
 exports.downloadContratoPDF = (req, res) => {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Trash2, Download, Upload, Edit, Clock, DollarSign, AlertTriangle, CircleSlash } from "lucide-react"
+import { Trash2, Download, Edit, Clock, DollarSign, AlertTriangle, CircleSlash } from "lucide-react"
 import Link from "next/link"
 import PageLayout from "@/app/components/page-layout"
 import { useParams, useRouter } from "next/navigation"
@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import api from "@/lib/api"
 
 export default function ContractDetails() {
   const params = useParams()
@@ -27,85 +28,75 @@ export default function ContractDetails() {
   const { toast } = useToast()
   const { addNotification } = useNotifications()
 
-  // Sample contract data
-  const [status, setStatus] = useState("ATIVO")
+  const [situacao, setSituacao] = useState("PAGO")
+  const [situacaoList, setSituacaoList] = useState<any[]>([])
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showPaymentAlert, setShowPaymentAlert] = useState(false)
   const [monthsLate, setMonthsLate] = useState(0)
+  const [contract, setContract] = useState<any>(null)
 
-  const contract = {
-    id: id,
-    competencia: "MARÇO/2025",
-    dataVen: "10/03/2025",
-    dataRen: "10/03/2026",
-    empresa: "EMPRESA PADRÃO",
-    valor: "R$ 65.000,00",
-    anexo: "contrato.pdf",
-    ultimoPagamento: "15/01/2025",
+  const situacaoColor = (s: string) => {
+    switch (s) {
+      case "PAGO":
+      case "LIQUIDAÇÃO":
+        return "bg-green-600"
+      case "EMPENHO":
+        return "bg-amber-400"
+      case "ASSINATURA GESTOR":
+      case "ASSINATURA ORDENADOR":
+        return "bg-blue-500"
+      default:
+        return "bg-gray-400"
+    }
   }
 
-  // Calculate months late
   useEffect(() => {
-    // In a real app, this would be calculated based on actual payment data
-    // For now, we'll simulate it
-    const today = new Date()
-    const lastPaymentDate = new Date(
-      Number.parseInt(contract.ultimoPagamento.split("/")[2]),
-      Number.parseInt(contract.ultimoPagamento.split("/")[1]) - 1,
-      Number.parseInt(contract.ultimoPagamento.split("/")[0]),
-    )
+    const fetchData = async () => {
+      try {
+        const [contractRes, statusRes, atrasoRes, historicoRes] = await Promise.all([
+          api.get(`/contratos/${id}`),
+          api.get("/status"),
+          api.get(`/pagamentos/${id}/atraso`),
+          api.get(`/pagamentos/${id}/historico`),
+        ])
 
-    const diffTime = today.getTime() - lastPaymentDate.getTime()
-    const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30))
+        const contractData = contractRes.data
+        const ultimoPagamento = historicoRes.data.ultimoPagamento || null
 
-    // Assuming monthly payments, subtract 1 to get months late (1 month grace period)
-    const late = Math.max(0, diffMonths - 1)
-    setMonthsLate(late)
-  }, [contract.ultimoPagamento])
+        setContract({
+          ...contractData,
+          ultimoPagamento: ultimoPagamento
+            ? new Date(ultimoPagamento).toLocaleDateString("pt-BR")
+            : null,
+          hasAttachment: true,
+        })
 
-  const handleStatusChange = (newStatus: string) => {
-    setStatus(newStatus)
+        setSituacao(contractData.nomeStatus)
+        setSituacaoList(statusRes.data)
+        setMonthsLate(atrasoRes.data.mesesAtraso || 0)
+      } catch (err) {
+        console.error("Erro ao carregar dados do contrato:", err)
+      }
+    }
 
-    // Show toast notification
-    toast({
-      title: "Status atualizado",
-      description: `O status do contrato foi alterado para ${newStatus}`,
-      variant: "success",
-    })
+    if (id) fetchData()
+  }, [id])
 
-    // Add to notification center
-    addNotification({
-      title: "Status de contrato alterado",
-      message: `Contrato #${id} alterado para ${newStatus}`,
-      type: "info",
-    })
+  const handleSituacaoChange = async (newStatus: string) => {
+    const statusObj = situacaoList.find((s: any) => s.nomeStatus === newStatus)
+    if (!statusObj) return
 
-    // In a real app, you would save this to your backend
+    try {
+      await api.put(`/contratos/${id}/status`, { idStatus: statusObj.idStatus })
+      setSituacao(newStatus)
+      toast({ title: "Situação atualizada", description: `A situação do contrato foi alterada para ${newStatus}`, variant: "success" })
+      addNotification({ title: "Situação alterada", message: `Contrato #${id} agora está como ${newStatus}`, type: "info" })
+    } catch (error) {
+      toast({ title: "Erro ao atualizar situação", variant: "destructive" })
+    }
   }
 
-  const handleDeleteContract = () => {
-    // Close the dialog
-    setShowDeleteDialog(false)
-
-    // Show toast notification
-    toast({
-      title: "Contrato excluído",
-      description: `O contrato #${id} foi excluído com sucesso`,
-      variant: "success",
-    })
-
-    // Add to notification center
-    addNotification({
-      title: "Contrato excluído",
-      message: `Contrato #${id} foi excluído permanentemente`,
-      type: "warning",
-    })
-
-    // Navigate back to home page
-    router.push("/")
-
-    // In a real app, you would delete this from your backend
-  }
+  if (!contract) return null
 
   return (
     <PageLayout title={`Detalhes do Contrato #${id}`}>
@@ -113,11 +104,11 @@ export default function ContractDetails() {
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <div className="text-sm font-medium mb-1">ID:</div>
-            <div className="bg-white p-2 rounded">{contract.id}</div>
+            <div className="bg-white p-2 rounded">{contract.idContrato}</div>
           </div>
           <div>
             <div className="text-sm font-medium mb-1">DATA VEN:</div>
-            <div className="bg-white p-2 rounded">{contract.dataVen}</div>
+            <div className="bg-white p-2 rounded">{new Date(contract.dataVen).toLocaleDateString("pt-BR")}</div>
           </div>
           <div>
             <div className="text-sm font-medium mb-1">COMPETÊNCIA:</div>
@@ -125,28 +116,26 @@ export default function ContractDetails() {
           </div>
           <div>
             <div className="text-sm font-medium mb-1">DATA REN (PREVISTO):</div>
-            <div className="bg-white p-2 rounded">{contract.dataRen}</div>
+            <div className="bg-white p-2 rounded">{new Date(contract.dataRen).toLocaleDateString("pt-BR")}</div>
           </div>
           <div>
             <div className="text-sm font-medium mb-1">EMPRESA:</div>
-            <div className="bg-white p-2 rounded">{contract.empresa}</div>
+            <div className="bg-white p-2 rounded">{contract.nomeEmp}</div>
           </div>
           <div>
             <div className="text-sm font-medium mb-1">VALOR:</div>
-            <div className="bg-white p-2 rounded">{contract.valor}</div>
+            <div className="bg-white p-2 rounded">R$ {Number(contract.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</div>
           </div>
           <div>
             <div className="text-sm font-medium mb-1">ÚLTIMO PAGAMENTO:</div>
-            <div className="bg-white p-2 rounded">{contract.ultimoPagamento}</div>
+            <div className="bg-white p-2 rounded">
+              {contract.ultimoPagamento || "Não registrado"}
+            </div>
           </div>
           <div>
             <div className="text-sm font-medium mb-1">MESES ATRASADOS:</div>
             <div className="flex items-center gap-2">
-              <div
-                className={`bg-white p-2 rounded flex-grow flex items-center ${
-                  monthsLate > 0 ? "text-black-600 font-medium" : ""
-                }`}
-              >
+              <div className="bg-white p-2 rounded flex-grow">
                 {monthsLate > 0 ? `${monthsLate} ${monthsLate === 1 ? "MÊS" : "MESES"}` : "Em dia"}
               </div>
               {monthsLate > 0 && (
@@ -162,15 +151,11 @@ export default function ContractDetails() {
             </div>
           </div>
           <div>
-            <div className="text-sm font-medium mb-1">STATUS:</div>
+            <div className="text-sm font-medium mb-1">SITUAÇÃO:</div>
             <div className="flex items-center gap-2">
               <div className="bg-white p-2 rounded flex-grow flex items-center">
-                <span
-                  className={`inline-block w-3 h-3 rounded-full mr-2 ${
-                    status === "ATIVO" ? "bg-green-600" : status === "PENDENTE" ? "bg-amber-400" : "bg-red-600"
-                  }`}
-                ></span>
-                {status}
+                <span className={`inline-block w-3 h-3 rounded-full mr-2 ${situacaoColor(situacao)}`}></span>
+                {situacao}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -179,15 +164,12 @@ export default function ContractDetails() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleStatusChange("ATIVO")}>
-                    <span className="text-green-600 mr-2">●</span> ATIVO
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusChange("PENDENTE")}>
-                    <span className="text-amber-400 mr-2">●</span> PENDENTE
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleStatusChange("CANCELADO")}>
-                    <span className="text-red-600 mr-2">●</span> CANCELADO
-                  </DropdownMenuItem>
+                  {situacaoList.map((s) => (
+                    <DropdownMenuItem key={s.idStatus} onClick={() => handleSituacaoChange(s.nomeStatus)}>
+                      <span className={`mr-2 ${situacaoColor(s.nomeStatus)} w-3 h-3 rounded-full inline-block`}></span>
+                      {s.nomeStatus}
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -195,46 +177,34 @@ export default function ContractDetails() {
           <div>
             <div className="text-sm font-medium mb-1">ANEXO:</div>
             <div className="flex items-center gap-2">
-              <div className="bg-white p-2 rounded flex-grow">{contract.anexo}</div>
-              <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
-                <Upload className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" className="bg-black text-white h-8 w-8 p-0 rounded-full">
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <div className="bg-white p-2 rounded flex-grow">
+                {contract.hasAttachment ? `contrato_${contract.idContrato}.pdf` : "Sem anexo"}
+              </div>
+              {contract.hasAttachment && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="bg-black text-white h-8 w-8 p-0 rounded-full"
+                  onClick={() => window.open(`${api.defaults.baseURL}/contratos/${id}/download`, "_blank")}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
         <div className="flex justify-center gap-2 mt-6">
-          {/* Delete button */}
-          <Button
-            variant="outline"
-            size="icon"
-            className="bg-black text-white rounded-full h-8 w-8"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-
-          {/* Payment register button (cash register) */}
           <Link href={`/payment-register/${id}`}>
             <Button variant="outline" size="icon" className="bg-black text-white rounded-full h-8 w-8">
               <DollarSign className="h-4 w-4" />
             </Button>
           </Link>
-
-          {/* History button (clock) */}
           <Link href={`/payment-history/${id}`}>
             <Button variant="outline" size="icon" className="bg-black text-white rounded-full h-8 w-8">
               <Clock className="h-4 w-4" />
             </Button>
           </Link>
-
-          {/* Edit button (pencil) */}
           <Link href={`/edit-contract/${id}`}>
             <Button variant="outline" size="icon" className="bg-black text-white rounded-full h-8 w-8">
               <Edit className="h-4 w-4" />
@@ -243,7 +213,6 @@ export default function ContractDetails() {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -254,14 +223,10 @@ export default function ContractDetails() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteContract} className="bg-red-600 hover:bg-red-700">
-              Excluir
-            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Payment Alert Dialog */}
       <AlertDialog open={showPaymentAlert} onOpenChange={setShowPaymentAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -270,8 +235,9 @@ export default function ContractDetails() {
               Pagamento Atrasado
             </AlertDialogTitle>
             <div className="text-sm text-muted-foreground space-y-4">
-              Este contrato está com {monthsLate} {monthsLate === 1 ? "mês" : "meses"} de atraso. Último pagamento em{" "}
-              {contract.ultimoPagamento}.<div className="pt-2">Deseja registrar um novo pagamento agora?</div>
+              Este contrato está com {monthsLate} {monthsLate === 1 ? "mês" : "meses"} de atraso. 
+              Último pagamento em {contract.ultimoPagamento || "não registrado"}.
+              <div className="pt-2">Deseja registrar um novo pagamento agora?</div>
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
