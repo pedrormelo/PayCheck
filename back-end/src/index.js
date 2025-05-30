@@ -15,7 +15,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const app = express();
 
 app.use(cors({
-    origin: 'http://localhost:3000', //frontend
+    origin: 'http://localhost:3002', //frontend
     credentials: true, // Permitir cookies
 }));
 
@@ -31,7 +31,7 @@ app.use("/status", statusRoutes);
 app.use("/dashboard", dashboardRoutes);
 
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3003;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });

@@ -7,4 +7,6 @@ router.get('/teste', (req, res) => {
     res.json({ mensagem: 'Backend está funcionando!' });
 });
 
+console.log('Rota de teste carregada');
+
 module.exports = router;
